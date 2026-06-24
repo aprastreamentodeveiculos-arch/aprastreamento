@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-primary: 'Outfit', sans-serif;
+
+  /* Nova Identidade Visual: Vermelho Neon, Preto Fosco e Branco Puro */
+  --bg-deep: #0A0B0D;            /* Preto Fosco Chumbo */
+  --bg-surface: #121316;         /* Superfície do Cartão e Sidebar (Preto Fosco Médio) */
+  --bg-surface-hover: #18191E;   /* Hover Fosco */
+  --border-color: #1E2026;       /* Borda fina discreta */
+  --border-focus: #FF003C;       /* Vermelho Neon */
+
+  --primary: #FF003C;            /* Vermelho Neon principal */
+  --primary-hover: #FF2E5B;      /* Vermelho Neon mais claro/luminoso */
+  --primary-glow: rgba(255, 0, 60, 0.2);
+  --primary-glow-strong: rgba(255, 0, 60, 0.45);
+  --primary-gradient: linear-gradient(135deg, #FF003C 0%, #A30022 100%);
+  
+  /* Cores auxiliares com pegada mais vibrante/neon */
+  --accent-blue: #00F0FF;        /* Ciano Neon */
+  --accent-purple: #D000FF;      /* Roxo Neon */
+  --accent-yellow: #FFD700;      /* Amarelo Neon */
+  --success: #39FF14;            /* Verde Neon (Lime) */
+  --danger: #FF003C;             /* Vermelho Neon para erros */
+
+  --text-main: #FFFFFF;          /* Branco Puro */
+  --text-muted: #A1A1AA;         /* Cinza Claro Suave */
+  --text-dark: #52525B;          /* Cinza Escuro de Suporte */
+
+  --sidebar-width: 270px;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-premium: 0 12px 40px rgba(0, 0, 0, 0.7);
+  --shadow-neon: 0 0 20px rgba(255, 0, 60, 0.25);
+  --radius-lg: 16px;
+  --radius-md: 10px;
+}
+
+
+/* Reset Geral */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-main);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Scrollbar Estilizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: #2D313F;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Layout Estrutural */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  transition: var(--transition-smooth);
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1.5rem;
+  }
+}
+
+/* Cards Premium */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-premium);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  border-color: rgba(255, 0, 60, 0.25);
+  box-shadow: var(--shadow-premium), 0 0 15px rgba(255, 0, 60, 0.05);
+}
+
+/* Inputs, Textareas e Selects */
+input, select, textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  outline: none;
+  font-size: 0.95rem;
+  transition: var(--transition-smooth);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition-smooth);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(255, 0, 60, 0.25);
+  border-color: rgba(255, 0, 60, 0.3);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 0 25px rgba(255, 0, 60, 0.45);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #141519;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background: #1C1D22;
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.1);
+  transform: translateY(-1px);
+}
+
+
+/* Utilitários de Tipografia e Grade */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+}
+
+p {
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.grid-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}

@@ -1,0 +1,33 @@
+# ── Node.js ──
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# ── Ambiente ──
+.env
+.env.local
+.env.*.local
+
+# ── Uploads (fotos dos técnicos) ──
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ── Build do frontend ──
+frontend/dist/
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── IDE ──
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Outros ──
+dashboard_demo.html

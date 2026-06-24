@@ -1,0 +1,38 @@
+services:
+  # ──────────────────────────────────────────
+  # BACKEND — Web Service (Node.js)
+  # ──────────────────────────────────────────
+  - type: web
+    name: aprastreamento-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false   # definir manualmente no painel do Render
+      - key: FRONTEND_URL
+        sync: false   # URL do frontend após primeiro deploy, ex: https://aprastreamento.onrender.com
+
+  # ──────────────────────────────────────────
+  # FRONTEND — Static Site (Vite/React)
+  # ──────────────────────────────────────────
+  - type: web
+    name: aprastreamento
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # URL do backend após primeiro deploy, ex: https://aprastreamento-api.onrender.com
