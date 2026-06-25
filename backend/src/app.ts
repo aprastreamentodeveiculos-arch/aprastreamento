@@ -17,16 +17,26 @@ const app: Application = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  process.env.FRONTEND_URL || ''
+  'https://aprastreamento.vercel.app',
+  (process.env.FRONTEND_URL || '').replace(/\/$/, '')
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Permite requests sem origin (ex: Render health-checks, apps mobile)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    const sanitizedOrigin = origin.replace(/\/$/, '');
+    const isVercelSubdomain = sanitizedOrigin.endsWith('.vercel.app') && sanitizedOrigin.includes('aprastreamento');
+    const isAllowed = allowedOrigins.map(o => o.replace(/\/$/, '')).includes(sanitizedOrigin) || isVercelSubdomain;
+
+    if (isAllowed) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: Origin ${origin} não autorizada.`));
+      callback(new Error(`CORS: Origin ${origin} não autorizada por política sanitizada.`));
     }
   },
   credentials: true
