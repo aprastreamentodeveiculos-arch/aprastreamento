@@ -225,3 +225,48 @@
   filter: drop-shadow(0 0 4px rgba(255, 0, 60, 0.6));
 }
 
+/* Botão de Fechar Sidebar (Mobile) */
+.close-sidebar-btn {
+  display: none;
+}
+
+/* Responsividade da Sidebar (Gaveta / Drawer) */
+@media (max-width: 992px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1100; /* Sobrepõe tudo, incluindo modais se necessário */
+    box-shadow: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+  }
+
+  .close-sidebar-btn {
+    display: block;
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--text-dark);
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    z-index: 10;
+  }
+
+  .close-sidebar-btn:hover {
+    color: var(--primary);
+    filter: drop-shadow(0 0 4px rgba(255, 0, 60, 0.6));
+  }
+}
+
+

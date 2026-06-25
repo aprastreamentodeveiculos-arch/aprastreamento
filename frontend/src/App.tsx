@@ -17,6 +17,7 @@ function App() {
   const [supportSending, setSupportSending] = useState<boolean>(false);
   const [supportSuccessTicketId, setSupportSuccessTicketId] = useState<string | null>(null);
   const [supportError, setSupportError] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const handleSendTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -580,6 +581,22 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Header Mobile de Topo */}
+      <header className="mobile-header">
+        <button className="menu-toggle-btn" onClick={() => setIsMobileMenuOpen(true)} aria-label="Abrir menu">
+          ☰
+        </button>
+        <div className="mobile-logo-text">
+          <h3>AP RASTRO</h3>
+        </div>
+        <div className="mobile-avatar">{getInitials(userName)}</div>
+      </header>
+
+      {/* Overlay da Sidebar Mobile */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
       {/* Sidebar de Navegação */}
       <Sidebar
         currentPage={currentPage}
@@ -587,6 +604,8 @@ function App() {
         userRole={userRole}
         userName={userName}
         selectedOSId={selectedOSId}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
         onOpenSupport={() => {
           setIsSupportModalOpen(true);
           setSupportSuccessTicketId(null);

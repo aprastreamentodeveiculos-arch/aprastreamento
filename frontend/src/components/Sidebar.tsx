@@ -8,6 +8,8 @@ interface SidebarProps {
   userName: string;
   selectedOSId?: string;
   onOpenSupport: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,13 +19,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userName,
   selectedOSId = 'avulsa',
   onOpenSupport,
+  isOpen,
+  onClose,
 }) => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      {/* Botão de Fechar Mobile */}
+      <button className="close-sidebar-btn" onClick={onClose} aria-label="Fechar menu">
+        ✕
+      </button>
+
       {/* Logo Oficial AP Rastro em SVG */}
       <div className="sidebar-logo">
         <svg width="45" height="38" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,7 +60,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {userRole === 'admin' ? (
           <>
             <button
-              onClick={() => setCurrentPage('dashboard')}
+              onClick={() => {
+                setCurrentPage('dashboard');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage === 'dashboard' ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -64,7 +76,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('clientes')}
+              onClick={() => {
+                setCurrentPage('clientes');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('clientes') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -77,7 +92,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('tecnicos')}
+              onClick={() => {
+                setCurrentPage('tecnicos');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('tecnicos') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -88,7 +106,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('estoque')}
+              onClick={() => {
+                setCurrentPage('estoque');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('estoque') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -100,7 +121,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('ordens')}
+              onClick={() => {
+                setCurrentPage('ordens');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('ordens') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -113,7 +137,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('financeiro')}
+              onClick={() => {
+                setCurrentPage('financeiro');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('financeiro') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -124,7 +151,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('caixa')}
+              onClick={() => {
+                setCurrentPage('caixa');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('caixa') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -135,7 +165,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             <button
-              onClick={() => setCurrentPage('historico')}
+              onClick={() => {
+                setCurrentPage('historico');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage.startsWith('historico') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -148,7 +181,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             <button
-              onClick={() => setCurrentPage('tecnico-caixa')}
+              onClick={() => {
+                setCurrentPage('tecnico-caixa');
+                onClose();
+              }}
               className={`sidebar-item ${currentPage === 'tecnico-caixa' || (currentPage === 'ordem-tecnico' && selectedOSId !== 'avulsa') ? 'active' : ''}`}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -161,6 +197,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => {
                 setCurrentPage('ordem-tecnico');
+                onClose();
               }}
               className={`sidebar-item ${currentPage === 'ordem-tecnico' && selectedOSId === 'avulsa' ? 'active' : ''}`}
             >
@@ -177,7 +214,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-help-card">
         <h4>Central de Suporte</h4>
         <p>Está com alguma dúvida sobre a instalação ou faturamento?</p>
-        <button onClick={onOpenSupport}>Suporte Online</button>
+        <button onClick={() => {
+          onOpenSupport();
+          onClose();
+        }}>Suporte Online</button>
       </div>
 
       <div className="sidebar-footer">

@@ -871,3 +871,177 @@ tr:last-child td {
   }
 }
 
+/* ==================================================================== */
+/* 📱 ADAPTAÇÃO MOBILE GLOBAL E RESPONSIVIDADE (FASE 10) */
+/* ==================================================================== */
+
+/* Header Mobile de Topo */
+.mobile-header {
+  display: none;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 5, 6, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 1050;
+  animation: supportFadeIn 0.25s ease;
+}
+
+@keyframes supportFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Forçar comportamento de scroll horizontal em qualquer table-container */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+  min-width: 800px; /* Garante que a tabela tenha largura estruturada para scroll horizontal no celular */
+}
+
+/* Regras para Celulares e Tablets */
+@media (max-width: 992px) {
+  /* Ativar Header Mobile */
+  .mobile-header {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .menu-toggle-btn {
+    background: transparent;
+    border: none;
+    color: #FFFFFF;
+    font-size: 1.6rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: var(--transition-smooth);
+    line-height: 1;
+  }
+
+  .menu-toggle-btn:hover {
+    color: var(--primary);
+    filter: drop-shadow(0 0 5px rgba(255, 0, 60, 0.8));
+  }
+
+  .mobile-logo-text h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 8px rgba(255, 0, 60, 0.4);
+  }
+
+  .mobile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.8rem;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.4);
+  }
+
+  /* Ajustes do Conteúdo Principal */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1rem !important;
+    padding-top: 75px !important; /* Compensa o Header Mobile fixo de 60px */
+    min-height: calc(100vh - 75px);
+  }
+
+  /* Simulator de Perfil */
+  .profile-simulator {
+    margin-bottom: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-surface);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Ajustes no Gráfico de Barras */
+  .bar-chart-container {
+    gap: 0.5rem;
+    padding: 1.5rem 0.25rem 0.25rem 0.25rem;
+  }
+
+  .bar-label {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+  
+  /* Grids de Formulários */
+  .form-group-row, .form-row {
+    flex-direction: column;
+    gap: 1rem !important;
+  }
+  
+  /* Seção de Cadastro Lateral */
+  .cadastro-layout-split {
+    flex-direction: column !important;
+  }
+}
+
+/* Telas Pequenas de Celulares (Smartphones) */
+@media (max-width: 576px) {
+  /* KPI Cards no Dashboard - Forçar Empilhamento em 1 Coluna */
+  .grid-dashboard {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  .card {
+    padding: 1.25rem !important;
+  }
+
+  /* Títulos de páginas */
+  .main-content h1, .main-content h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  /* Donut Chart */
+  .donut-chart-container {
+    flex-direction: column;
+    gap: 1rem;
+    height: auto;
+    padding: 1rem 0;
+  }
+  
+  .donut-text {
+    position: relative !important;
+    transform: none !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin-top: 0.5rem;
+  }
+}
+
+
