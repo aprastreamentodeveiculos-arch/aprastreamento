@@ -7,6 +7,7 @@ interface SidebarProps {
   userRole: 'admin' | 'tecnico';
   userName: string;
   selectedOSId?: string;
+  onOpenSupport: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -15,6 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole,
   userName,
   selectedOSId = 'avulsa',
+  onOpenSupport,
 }) => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -175,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-help-card">
         <h4>Central de Suporte</h4>
         <p>Está com alguma dúvida sobre a instalação ou faturamento?</p>
-        <button onClick={() => alert('Abrindo chat com suporte técnico...')}>Suporte Online</button>
+        <button onClick={onOpenSupport}>Suporte Online</button>
       </div>
 
       <div className="sidebar-footer">

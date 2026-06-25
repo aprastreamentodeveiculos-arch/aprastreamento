@@ -9,6 +9,44 @@ function App() {
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [userName, setUserName] = useState<string>('Andrew Gerente');
 
+  // Estados da Central de Suporte & Chamados
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
+  const [supportTab, setSupportTab] = useState<'faq' | 'ticket'>('faq');
+  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
+  const [supportForm, setSupportForm] = useState({ pagina: 'Dashboard', tipoErro: 'Bug na Interface', descricao: '' });
+  const [supportSending, setSupportSending] = useState<boolean>(false);
+  const [supportSuccessTicketId, setSupportSuccessTicketId] = useState<string | null>(null);
+  const [supportError, setSupportError] = useState<string | null>(null);
+
+  const handleSendTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportForm.descricao.trim()) {
+      setSupportError('Por favor, descreva o problema.');
+      return;
+    }
+
+    setSupportSending(true);
+    setSupportError(null);
+    setSupportSuccessTicketId(null);
+
+    try {
+      const ticket = await api.tickets.create({
+        usuarioNome: userName,
+        usuarioRole: userRole,
+        pagina: supportForm.pagina,
+        tipoErro: supportForm.tipoErro,
+        descricao: supportForm.descricao
+      });
+      setSupportSuccessTicketId(ticket.ticketId);
+      setSupportForm({ pagina: 'Dashboard', tipoErro: 'Bug na Interface', descricao: '' });
+    } catch (err: any) {
+      console.error('Erro ao enviar ticket:', err);
+      setSupportError(err.message || 'Ocorreu um erro ao enviar o chamado de suporte.');
+    } finally {
+      setSupportSending(false);
+    }
+  };
+
   // Estados reais integrados à API (MongoDB)
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
@@ -549,6 +587,11 @@ function App() {
         userRole={userRole}
         userName={userName}
         selectedOSId={selectedOSId}
+        onOpenSupport={() => {
+          setIsSupportModalOpen(true);
+          setSupportSuccessTicketId(null);
+          setSupportError(null);
+        }}
       />
 
       {/* Visualização de Conteúdo Principal */}
@@ -2280,6 +2323,177 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* Modal Premium de Suporte e Chamados */}
+      {isSupportModalOpen && (
+        <div className="modal-overlay support-modal-overlay">
+          <div className="modal-content support-modal-content">
+            <div className="modal-header">
+              <h3>Central de Suporte</h3>
+              <button className="close-btn" onClick={() => setIsSupportModalOpen(false)}>✕</button>
+            </div>
+
+            {/* Abas */}
+            <div className="support-tabs">
+              <button 
+                className={`support-tab-btn ${supportTab === 'faq' ? 'active' : ''}`}
+                onClick={() => setSupportTab('faq')}
+              >
+                ❓ Perguntas Frequentes (FAQ)
+              </button>
+              <button 
+                className={`support-tab-btn ${supportTab === 'ticket' ? 'active' : ''}`}
+                onClick={() => setSupportTab('ticket')}
+              >
+                ✉️ Relatar Problema / Suporte
+              </button>
+            </div>
+
+            <div className="support-modal-body">
+              {supportTab === 'faq' ? (
+                <div className="support-faq-container">
+                  <p className="faq-intro">
+                    Antes de abrir um chamado, consulte se a sua dúvida já está listada nas resoluções rápidas abaixo:
+                  </p>
+                  
+                  <div className="faq-list">
+                    {/* FAQ 1 */}
+                    <div className={`faq-item ${faqOpenIndex === 0 ? 'open' : ''}`}>
+                      <div className="faq-question" onClick={() => setFaqOpenIndex(faqOpenIndex === 0 ? null : 0)}>
+                        <span>Como dar baixa rápida em uma mensalidade?</span>
+                        <span className="faq-arrow">▼</span>
+                      </div>
+                      <div className="faq-answer">
+                        <p>
+                          Para dar baixa de pagamento, acesse a aba <strong>Clientes</strong>, selecione o cliente correspondente e clique no botão <strong>"Ver Ficha"</strong>. Na Ficha do Cliente, vá na aba <strong>Financeiro</strong>, localize a mensalidade e clique no botão <strong>"Baixa Rápida"</strong>. O sistema confirmará o pagamento em tempo real.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* FAQ 2 */}
+                    <div className={`faq-item ${faqOpenIndex === 1 ? 'open' : ''}`}>
+                      <div className="faq-question" onClick={() => setFaqOpenIndex(faqOpenIndex === 1 ? null : 1)}>
+                        <span>Por que um veículo recém cadastrado não aparece na contagem de cobrança?</span>
+                        <span className="faq-arrow">▼</span>
+                      </div>
+                      <div className="faq-answer">
+                        <p>
+                          O faturamento do AP RASTRO segue a regra de <strong>cobrabilidade por instalação ativa</strong>. Um veículo recém cadastrado consta no status de <em>"Aguardando Instalação"</em> (Sem cobrança). A cobrança mensal só é iniciada após o administrador homologar e aprovar a Ordem de Serviço (O.S.) correspondente a esse veículo.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* FAQ 3 */}
+                    <div className={`faq-item ${faqOpenIndex === 2 ? 'open' : ''}`}>
+                      <div className="faq-question" onClick={() => setFaqOpenIndex(faqOpenIndex === 2 ? null : 2)}>
+                        <span>Como destinar um rastreador ou chip de celular para um instalador?</span>
+                        <span className="faq-arrow">▼</span>
+                      </div>
+                      <div className="faq-answer">
+                        <p>
+                          Vá na aba <strong>Estoque</strong>, localize o equipamento (seja o IMEI do rastreador ou ICCID do chip) que está com o status <em>"Estoque"</em>. Clique em <strong>"Transferir"</strong>, selecione o técnico responsável no dropdown de destino e confirme. O status do equipamento mudará para <em>"Com Técnico"</em> e ficará pronto para uso em campo.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* FAQ 4 */}
+                    <div className={`faq-item ${faqOpenIndex === 3 ? 'open' : ''}`}>
+                      <div className="faq-question" onClick={() => setFaqOpenIndex(faqOpenIndex === 3 ? null : 3)}>
+                        <span>Como lançar uma despesa administrativa no sistema?</span>
+                        <span className="faq-arrow">▼</span>
+                      </div>
+                      <div className="faq-answer">
+                        <p>
+                          Acesse a aba <strong>Fluxo de Caixa</strong> e clique no botão <strong>"+"</strong> no canto superior direito para cadastrar uma nova despesa. Preencha a descrição, valor, data do lançamento e selecione a categoria correspondente. Essa ação recalcula os lucros e despesas do dashboard em tempo real.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="support-ticket-container">
+                  {supportSuccessTicketId ? (
+                    <div className="support-success-box">
+                      <div className="success-icon">✓</div>
+                      <h4>Chamado de Suporte Aberto!</h4>
+                      <p className="ticket-id-tag">ID do Ticket: <strong>{supportSuccessTicketId}</strong></p>
+                      <p>
+                        Seu problema foi registrado no banco de dados e uma notificação de e-mail estruturada foi enviada para <strong>ANDREWLAMEIRA30@GMAIL.COM</strong>.
+                      </p>
+                      <button className="btn btn-secondary" onClick={() => setSupportSuccessTicketId(null)}>
+                        Abrir Outro Chamado
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSendTicket} className="support-form">
+                      {supportError && <div className="error-message support-error">{supportError}</div>}
+                      
+                      <div className="form-group-row">
+                        <div className="form-group select-group">
+                          <label htmlFor="support-page">Página/Tela do Erro:</label>
+                          <select
+                            id="support-page"
+                            value={supportForm.pagina}
+                            onChange={(e) => setSupportForm({ ...supportForm, pagina: e.target.value })}
+                          >
+                            <option value="Dashboard">Dashboard</option>
+                            <option value="Clientes">Clientes</option>
+                            <option value="Técnicos">Técnicos</option>
+                            <option value="Estoque">Estoque</option>
+                            <option value="Ordens de Serviço">Ordens de Serviço</option>
+                            <option value="Mensalidades">Mensalidades</option>
+                            <option value="Fluxo de Caixa">Fluxo de Caixa</option>
+                            <option value="Histórico Cruzado">Histórico Cruzado</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group select-group">
+                          <label htmlFor="support-type">Tipo de Erro:</label>
+                          <select
+                            id="support-type"
+                            value={supportForm.tipoErro}
+                            onChange={(e) => setSupportForm({ ...supportForm, tipoErro: e.target.value })}
+                          >
+                            <option value="Bug na Interface">Bug na Interface</option>
+                            <option value="Erro nos Cálculos">Erro nos Cálculos</option>
+                            <option value="Dúvida de Operação">Dúvida de Operação</option>
+                            <option value="Instalação / O.S.">Instalação / O.S.</option>
+                            <option value="Outros">Outros</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="support-desc">Descrição Detalhada do Problema:</label>
+                        <textarea
+                          id="support-desc"
+                          rows={4}
+                          value={supportForm.descricao}
+                          onChange={(e) => setSupportForm({ ...supportForm, descricao: e.target.value })}
+                          placeholder="Por favor, descreva detalhadamente o comportamento inesperado que ocorreu..."
+                        />
+                      </div>
+
+                      <div className="support-footer-info">
+                        <span>Destinatário técnico: <strong>ANDREWLAMEIRA30@GMAIL.COM</strong></span>
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        disabled={supportSending}
+                        style={{ width: '100%', marginTop: '0.5rem' }}
+                      >
+                        {supportSending ? 'Registrando Chamado...' : 'Enviar Chamado de Suporte'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

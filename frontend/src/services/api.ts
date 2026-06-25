@@ -90,6 +90,20 @@ export interface Despesa {
   categoriaId: CategoriaDespesa | string;
 }
 
+export interface Ticket {
+  _id: string;
+  ticketId: string;
+  usuarioNome: string;
+  usuarioRole: string;
+  pagina: string;
+  tipoErro: string;
+  descricao: string;
+  destinatarioEmail: string;
+  status: 'ABERTO' | 'RESOLVIDO';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Funções de requisição genéricas
 async function request(url: string, options?: RequestInit) {
   try {
@@ -248,5 +262,12 @@ export const api = {
       throw new Error(data.error || 'Erro ao realizar upload da foto.');
     }
     return data;
+  },
+
+  // Tickets de Suporte
+  tickets: {
+    create: (data: Omit<Ticket, '_id' | 'ticketId' | 'status' | 'destinatarioEmail'>): Promise<Ticket> =>
+      request('/tickets', { method: 'POST', body: JSON.stringify(data) }),
+    list: (): Promise<Ticket[]> => request('/tickets')
   }
 };

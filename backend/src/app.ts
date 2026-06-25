@@ -10,6 +10,7 @@ import historicoRoutes from './modules/historico/historico.routes';
 import financeiroRoutes from './modules/financeiro/financeiro.routes';
 import seedRoutes from './modules/seed/seed.routes';
 import uploadRoutes from './modules/upload/upload.routes';
+import ticketRoutes from './modules/tickets/ticket.routes';
 
 const app: Application = express();
 
@@ -57,6 +58,7 @@ app.use('/api/historico', historicoRoutes);
 app.use('/api/financeiro', financeiroRoutes);
 app.use('/api/seed', seedRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Rota de Health-Check simples
 app.get('/api/health', (req: Request, res: Response) => {
