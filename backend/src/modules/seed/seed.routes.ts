@@ -194,15 +194,15 @@ export const runSeeding = async () => {
 
       if (rand < 0.45) {
         // Instalado em Abril 2026 (dia aleatório 1 a 20)
-        dataInstalacao = new Date(`2026-04-${Math.floor(Math.random()*20)+1}T14:00:00Z`);
+        dataInstalacao = new Date(2026, 3, Math.floor(Math.random()*20)+1, 14, 0, 0);
         mesesFaturamento = [3, 4, 5]; // Abril, Maio, Junho
       } else if (rand < 0.85) {
         // Instalado em Maio 2026
-        dataInstalacao = new Date(`2026-05-${Math.floor(Math.random()*20)+1}T14:00:00Z`);
+        dataInstalacao = new Date(2026, 4, Math.floor(Math.random()*20)+1, 14, 0, 0);
         mesesFaturamento = [4, 5]; // Maio, Junho
       } else {
         // Instalado em Junho 2026
-        dataInstalacao = new Date(`2026-06-${Math.floor(Math.random()*15)+1}T14:00:00Z`);
+        dataInstalacao = new Date(2026, 5, Math.floor(Math.random()*15)+1, 14, 0, 0);
         mesesFaturamento = [5]; // Apenas Junho
       }
 
