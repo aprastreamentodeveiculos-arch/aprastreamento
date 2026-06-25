@@ -167,8 +167,27 @@ function App() {
   const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
   const lucroReal = mensalidades.filter(m => m.status === 'PAGO').reduce((acc, m) => acc + m.valor, 0) - totalDespesas;
 
+  // Filtrar dados por mês (Abril, Maio, Junho de 2026) para o gráfico de fluxo de caixa
+  const obterFluxoMes = (mesZeroIndexed: number) => {
+    const descMes = despesas.filter(d => {
+      const data = new Date(d.data);
+      return data.getFullYear() === 2026 && data.getMonth() === mesZeroIndexed;
+    }).reduce((acc, d) => acc + d.valor, 0);
+
+    const recMes = mensalidades.filter(m => {
+      const data = new Date(m.dataPagamento || m.dataVencimento);
+      return data.getFullYear() === 2026 && data.getMonth() === mesZeroIndexed && m.status === 'PAGO';
+    }).reduce((acc, m) => acc + m.valor, 0);
+
+    return { receita: recMes, despesa: descMes };
+  };
+
+  const fluxoAbril = obterFluxoMes(3);
+  const fluxoMaio = obterFluxoMes(4);
+  const fluxoJunho = obterFluxoMes(5);
+
   // Escala proporcional dinâmica do gráfico de barras para evitar overflow
-  const maxVal = Math.max(1800, 900, 2100, 1100, totalReceitaEstimada, totalDespesas, 1000);
+  const maxVal = Math.max(fluxoAbril.receita, fluxoAbril.despesa, fluxoMaio.receita, fluxoMaio.despesa, fluxoJunho.receita, fluxoJunho.despesa, 1000);
 
   // Contagem de Veículos (Chips não são computados como dispositivos ativos)
   const totalVeiculosMonitorados = clientes.reduce((acc, c) => acc + (c.veiculosCount || 0), 0);
@@ -671,27 +690,27 @@ function App() {
                 <h3>Fluxo de Caixa Mensal</h3>
                 <div className="bar-chart-container">
                   <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(1800 / maxVal) * 90}%` }} data-value="R$ 1.800"></div>
+                    <div className="bar-graphic in" style={{ height: `${(fluxoAbril.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoAbril.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Abr (Receita)</span>
                   </div>
                   <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(900 / maxVal) * 90}%` }} data-value="R$ 900"></div>
+                    <div className="bar-graphic out" style={{ height: `${(fluxoAbril.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoAbril.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Abr (Despesas)</span>
                   </div>
                   <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(2100 / maxVal) * 90}%` }} data-value="R$ 2.100"></div>
+                    <div className="bar-graphic in" style={{ height: `${(fluxoMaio.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoMaio.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Mai (Receita)</span>
                   </div>
                   <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(1100 / maxVal) * 90}%` }} data-value="R$ 1.100"></div>
+                    <div className="bar-graphic out" style={{ height: `${(fluxoMaio.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoMaio.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Mai (Despesas)</span>
                   </div>
                   <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(totalReceitaEstimada / maxVal) * 90}%` }} data-value={`R$ ${totalReceitaEstimada}`}></div>
+                    <div className="bar-graphic in" style={{ height: `${(fluxoJunho.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoJunho.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Jun (Receita)</span>
                   </div>
                   <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(totalDespesas / maxVal) * 90}%` }} data-value={`R$ ${totalDespesas}`}></div>
+                    <div className="bar-graphic out" style={{ height: `${(fluxoJunho.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoJunho.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
                     <span className="bar-label">Jun (Despesas)</span>
                   </div>
                 </div>
