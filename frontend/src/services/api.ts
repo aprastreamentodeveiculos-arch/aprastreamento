@@ -1,4 +1,16 @@
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Fallback dinâmico: se estiver rodando na produção da Vercel
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'https://aprastreamento-api.onrender.com';
+  }
+  return 'http://localhost:5000';
+};
+
+const API_BASE = getApiBase() + '/api';
+
 
 // Tipagem base
 export interface Cliente {
