@@ -25,10 +25,10 @@
     "mongoose": "^9.7.2",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.1",
+    "@types/nodemailer": "^8.0.1",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
-    "@types/nodemailer": "^8.0.1",
     "ts-node-dev": "^2.0.0"
   },
   "engines": {
