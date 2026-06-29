@@ -1,24 +1,14 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configuração do transporter do Nodemailer usando variáveis de ambiente
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // Usa STARTTLS, mais recomendado para contornar bloqueios em nuvem
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false // Evita alguns erros de certificado em ambientes hosteados
-  }
-});
+// O Resend não usa SMTP puro, logo não sofrerá bloqueio de porta pela Render.
+// Ele necessita de uma chave de API válida no .env: RESEND_API_KEY
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * Função utilitária para enviar e-mails
+ * Função utilitária para enviar e-mails via API do Resend
  * @param to E-mail do destinatário
  * @param subject Assunto do e-mail
  * @param text Conteúdo em texto plano
@@ -26,19 +16,24 @@ const transporter = nodemailer.createTransport({
  */
 export const sendEmail = async (to: string, subject: string, text: string, html?: string) => {
   try {
-    const mailOptions = {
-      from: `"AP Rastro Suporte" <${process.env.EMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      // No plano free do Resend, apenas "onboarding@resend.dev" pode ser usado como remetente
+      from: 'AP Rastro Suporte <onboarding@resend.dev>',
       to,
       subject,
       text,
-      html,
-    };
+      html: html || text,
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ E-mail enviado com sucesso para ${to}. ID: ${info.messageId}`);
+    if (error) {
+      console.error(`❌ Erro ao enviar e-mail para ${to} via Resend:`, error);
+      return false;
+    }
+
+    console.log(`✅ E-mail enviado com sucesso para ${to}. ID Resend: ${data?.id}`);
     return true;
   } catch (error) {
-    console.error(`❌ Erro ao enviar e-mail para ${to}:`, error);
+    console.error(`❌ Erro inesperado ao disparar e-mail para ${to}:`, error);
     return false;
   }
 };
