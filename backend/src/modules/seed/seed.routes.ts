@@ -228,28 +228,20 @@ export const runSeeding = async () => {
       // Associar técnico de forma sortida
       const tec = tecnicosCriados[Math.floor(Math.random() * tecnicosCriados.length)];
 
-      // Criar equipamentos instalados
-      countEquipamentos += 2;
+      countEquipamentos += 1;
       const idRastreador = '35829302' + String(1000000 + countVeiculos);
-      const idChip = '895510200' + String(1000000000 + countVeiculos);
+      const iccid = '895510200' + String(1000000000 + countVeiculos);
 
       const rastreador = await Equipamento.create({
-        tipo: 'RASTREADOR',
         identificador: idRastreador,
-        status: 'INSTALADO',
-        tecnicoResponsavelId: tec._id,
-        marca: 'Suntech',
-        modelo: 'ST310U'
-      });
-
-      const chip = await Equipamento.create({
-        tipo: 'CHIP',
-        identificador: idChip,
-        status: 'INSTALADO',
-        tecnicoResponsavelId: tec._id,
-        operadora: Math.random() > 0.5 ? 'Vivo' : 'Claro',
+        iccid: iccid,
         numeroLinha: '(11) 9' + String(10000000 + countVeiculos),
-        apn: 'smart.m2m'
+        operadora: Math.random() > 0.5 ? 'Vivo' : 'Claro',
+        apn: 'smart.m2m',
+        marca: 'Suntech',
+        modelo: 'ST310U',
+        status: 'INSTALADO',
+        tecnicoResponsavelId: tec._id
       });
 
       // Data de instalação aleatória (Abril, Maio ou Junho de 2026)
@@ -277,7 +269,6 @@ export const runSeeding = async () => {
       await HistoricoInstalacao.create({
         veiculoId: veiculo._id,
         rastreadorId: rastreador._id,
-        chipId: chip._id,
         tecnicoId: tec._id,
         dataInstalacao
       });
@@ -384,17 +375,11 @@ export const runSeeding = async () => {
   // Equipamentos em estoque
   for (let k = 0; k < 8; k++) {
     await Equipamento.create({
-      tipo: 'RASTREADOR',
       identificador: '35829302' + String(2000000 + k),
+      iccid: '895510200' + String(2000000000 + k),
       status: 'ESTOQUE',
       marca: 'Suntech',
-      modelo: 'ST310U'
-    });
-
-    await Equipamento.create({
-      tipo: 'CHIP',
-      identificador: '895510200' + String(2000000000 + k),
-      status: 'ESTOQUE',
+      modelo: 'ST310U',
       operadora: k % 2 === 0 ? 'Vivo' : 'Claro',
       numeroLinha: '(11) 97000-000' + k,
       apn: 'smart.m2m'
@@ -409,28 +394,21 @@ export const runSeeding = async () => {
   const veiculosOS1 = await Veiculo.find({ clienteId: clienteOS1?._id });
   if (veiculosOS1.length > 0) {
     const rastComTec = await Equipamento.create({
-      tipo: 'RASTREADOR',
       identificador: '358293029999991',
+      iccid: '8955102009999999901',
+      numeroLinha: '(11) 99999-8888',
+      operadora: 'Vivo',
+      apn: 'smart.m2m',
       status: 'COM_TECNICO',
       tecnicoResponsavelId: tec2._id,
       marca: 'Suntech',
       modelo: 'ST310U'
-    });
-    const chipComTec = await Equipamento.create({
-      tipo: 'CHIP',
-      identificador: '8955102009999999901',
-      status: 'COM_TECNICO',
-      tecnicoResponsavelId: tec2._id,
-      operadora: 'Vivo',
-      numeroLinha: '(11) 99999-8888',
-      apn: 'smart.m2m'
     });
 
     await OrdemServico.create({
       tecnicoId: tec2._id,
       veiculoId: veiculosOS1[0]._id,
       rastreadorId: rastComTec._id,
-      chipId: chipComTec._id,
       observacoes: 'Instalação pendente de fotos do chicote de fusíveis.',
       status: 'PENDENTE',
       fotosUrls: []
@@ -442,28 +420,21 @@ export const runSeeding = async () => {
   const veiculosOS2 = await Veiculo.find({ clienteId: clienteOS2?._id });
   if (veiculosOS2.length > 0) {
     const rastComTec2 = await Equipamento.create({
-      tipo: 'RASTREADOR',
       identificador: '358293029999992',
+      iccid: '8955102009999999902',
+      numeroLinha: '(11) 99999-7777',
+      operadora: 'Claro',
+      apn: 'claro.m2m',
       status: 'COM_TECNICO',
       tecnicoResponsavelId: tec2._id,
       marca: 'Suntech',
       modelo: 'ST310U'
-    });
-    const chipComTec2 = await Equipamento.create({
-      tipo: 'CHIP',
-      identificador: '8955102009999999902',
-      status: 'COM_TECNICO',
-      tecnicoResponsavelId: tec2._id,
-      operadora: 'Claro',
-      numeroLinha: '(11) 99999-7777',
-      apn: 'claro.m2m'
     });
 
     await OrdemServico.create({
       tecnicoId: tec2._id,
       veiculoId: veiculosOS2[0]._id,
       rastreadorId: rastComTec2._id,
-      chipId: chipComTec2._id,
       observacoes: 'Visita agendada para o sábado de manhã no pátio.',
       status: 'AGENDADA',
       fotosUrls: []

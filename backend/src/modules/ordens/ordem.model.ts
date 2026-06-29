@@ -6,7 +6,6 @@ export interface IOrdemServico extends Document {
   tecnicoId: Types.ObjectId;
   veiculoId: Types.ObjectId;
   rastreadorId: Types.ObjectId;
-  chipId: Types.ObjectId;
   status: StatusOrdemServico;
   observacoes?: string;
   fotosUrls: string[];
@@ -20,7 +19,6 @@ const OrdemServicoSchema = new Schema<IOrdemServico>({
   tecnicoId: { type: Schema.Types.ObjectId, ref: 'Tecnico', required: true },
   veiculoId: { type: Schema.Types.ObjectId, ref: 'Veiculo', required: true },
   rastreadorId: { type: Schema.Types.ObjectId, ref: 'Equipamento', required: true },
-  chipId: { type: Schema.Types.ObjectId, ref: 'Equipamento', required: true },
   status: { 
     type: String, 
     required: true, 

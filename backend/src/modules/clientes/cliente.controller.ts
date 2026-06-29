@@ -4,10 +4,11 @@ import { Veiculo } from '../veiculos/veiculo.model';
 import { HistoricoInstalacao } from '../historico/historico.model';
 import { Mensalidade } from '../financeiro/mensalidade.model';
 import { Plano } from '../planos/plano.model';
+import { Equipamento } from '../equipamentos/equipamento.model';
 
 export const createCliente = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nome, documento, email, whatsapp, endereco, planoId, diaVencimento } = req.body;
+    const { nome, documento, email, whatsapp, endereco, planoId, diaVencimento, veiculos } = req.body;
 
     if (!nome || !documento) {
       res.status(400).json({ error: 'Nome e Documento (CPF/CNPJ) são obrigatórios.' });
@@ -32,6 +33,37 @@ export const createCliente = async (req: Request, res: Response): Promise<void> 
     });
 
     await novoCliente.save();
+
+    // Se vierem veículos na requisição, cadastrá-los e vincular rastreadores
+    if (veiculos && Array.isArray(veiculos) && veiculos.length > 0) {
+      for (const vData of veiculos) {
+        if (!vData.placa) continue;
+
+        const novoVeiculo = new Veiculo({
+          clienteId: novoCliente._id,
+          placa: vData.placa,
+          marca: vData.marca,
+          modelo: vData.modelo,
+          ano: vData.ano,
+          cor: vData.cor
+        });
+        await novoVeiculo.save();
+
+        if (vData.rastreadorId) {
+          // Marcar rastreador como instalado
+          const eq = await Equipamento.findByIdAndUpdate(vData.rastreadorId, { status: 'INSTALADO' });
+          if (eq && eq.tecnicoResponsavelId) {
+            // Gerar histórico
+            await HistoricoInstalacao.create({
+              veiculoId: novoVeiculo._id,
+              rastreadorId: eq._id,
+              tecnicoId: eq.tecnicoResponsavelId,
+              dataInstalacao: new Date()
+            });
+          }
+        }
+      }
+    }
 
     res.status(201).json(novoCliente);
   } catch (error: any) {
@@ -182,8 +214,7 @@ export const getClientePanorama = async (req: Request, res: Response): Promise<v
     const veiculoIds = veiculos.map(v => v._id);
     const historico = await HistoricoInstalacao.find({ veiculoId: { $in: veiculoIds } })
       .populate('veiculoId', 'placa')
-      .populate('rastreadorId', 'identificador marca modelo')
-      .populate('chipId', 'identificador operadora numeroLinha')
+      .populate('rastreadorId', 'identificador marca modelo iccid operadora numeroLinha')
       .populate('tecnicoId', 'nome')
       .sort({ dataInstalacao: -1 })
       .lean();

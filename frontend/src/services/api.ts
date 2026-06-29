@@ -65,8 +65,8 @@ export interface Tecnico {
 
 export interface Equipamento {
   _id: string;
-  tipo: 'RASTREADOR' | 'CHIP';
   identificador: string;
+  iccid?: string;
   numeroLinha?: string;
   operadora?: string;
   apn?: string;
@@ -81,7 +81,6 @@ export interface OrdemServico {
   tecnicoId: string | { _id: string; nome: string };
   veiculoId: string | { _id: string; placa: string; clienteId?: { _id: string; nome: string } };
   rastreadorId: string | { _id: string; identificador: string };
-  chipId: string | { _id: string; identificador: string };
   status: 'AGENDADA' | 'PENDENTE' | 'APROVADO' | 'REJEITADO';
   dataCriacao?: string;
   fotosUrls: string[];
@@ -165,7 +164,7 @@ export const api = {
   // Clientes
   clientes: {
     list: (): Promise<Cliente[]> => request('/clientes'),
-    create: (data: Partial<Cliente>): Promise<Cliente> => 
+    create: (data: Partial<Cliente> & { veiculos?: any[] }): Promise<Cliente> => 
       request('/clientes', { method: 'POST', body: JSON.stringify(data) }),
     panorama: (id: string): Promise<{
       cliente: Cliente;
@@ -219,7 +218,6 @@ export const api = {
       chassi?: string;
       renavam?: string;
       rastreadorId: string;
-      chipId: string;
       observacoes?: string;
       fotosUrls?: string[];
       status?: string;

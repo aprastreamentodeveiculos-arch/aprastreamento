@@ -74,16 +74,10 @@ function App() {
 
   // Estados dos formulários de cadastro
   const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
+  const [veiculosCliente, setVeiculosCliente] = useState<{placa: string, marca: string, modelo: string, cor: string, ano: string, rastreadorId: string}[]>([]);
   const [newTecnico, setNewTecnico] = useState({ nome: '', telefone: '' });
   const [newDespesa, setNewDespesa] = useState({ descricao: '', valor: '', data: new Date().toISOString().split('T')[0], categoria: '' });
-  const [newOS, setNewOS] = useState<{
-    placa: string;
-    clienteId: string;
-    rastreadorId: string;
-    chipId: string;
-    observacoes: string;
-    fotosUrls: string[];
-  }>({ placa: '', clienteId: '', rastreadorId: '', chipId: '', observacoes: '', fotosUrls: [] });
+  const [newOS, setNewOS] = useState({ placa: '', clienteId: '', rastreadorId: '', observacoes: '', fotosUrls: [] as string[] });
 
   const [selectedOSId, setSelectedOSId] = useState<string>('avulsa');
   
@@ -92,7 +86,6 @@ function App() {
     placa: '',
     tecnicoId: '',
     rastreadorId: '',
-    chipId: '',
     observacoes: ''
   });
 
@@ -102,7 +95,7 @@ function App() {
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
     if (osId === 'avulsa') {
-      setNewOS({ placa: '', clienteId: '', rastreadorId: '', chipId: '', observacoes: '', fotosUrls: [] });
+      setNewOS({ placa: '', clienteId: '', rastreadorId: '', observacoes: '', fotosUrls: [] });
     } else {
       const os = ordens.find(o => o._id === osId);
       if (os) {
@@ -110,7 +103,6 @@ function App() {
           placa: (os.veiculoId as any)?.placa || '',
           clienteId: (os.veiculoId as any)?.clienteId?._id || (os.veiculoId as any)?.clienteId || '',
           rastreadorId: (os.rastreadorId as any)?._id || os.rastreadorId || '',
-          chipId: (os.chipId as any)?._id || os.chipId || '',
           observacoes: os.observacoes || '',
           fotosUrls: os.fotosUrls || []
         });
@@ -131,8 +123,7 @@ function App() {
   const [filtroEstoqueStatus, setFiltroEstoqueStatus] = useState<string>('todos');
   const [transferindoId, setTransferindoId] = useState<string | null>(null);
   const [tecnicoParaTransferencia, setTecnicoParaTransferencia] = useState<string>('');
-  const [newRastreador, setNewRastreador] = useState({ identificador: '', marca: '', modelo: '', observacoes: '' });
-  const [newChip, setNewChip] = useState({ identificador: '', numeroLinha: '', operadora: '', apn: '' });
+  const [newEquipamento, setNewEquipamento] = useState({ identificador: '', iccid: '', marca: '', modelo: '', numeroLinha: '', operadora: '', apn: '', observacoes: '' });
 
   // Carregar dados gerais do banco de dados
   const carregarDados = async () => {
@@ -309,9 +300,10 @@ function App() {
     e.preventDefault();
     if (!newCliente.nome || !newCliente.documento) return;
     try {
-      await api.clientes.create(newCliente);
+      await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
       setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
-      alert('Cliente cadastrado com sucesso!');
+      setVeiculosCliente([]);
+      alert('Cliente e Veículos cadastrados com sucesso!');
       carregarDados();
       setCurrentPage('clientes'); // Redireciona de volta para a listagem
     } catch (err: any) {
@@ -378,7 +370,7 @@ function App() {
   // Handler do Técnico enviando O.S.
   const handleSendOS = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOS.placa || !newOS.clienteId || !newOS.rastreadorId || !newOS.chipId) {
+    if (!newOS.placa || !newOS.clienteId || !newOS.rastreadorId) {
       alert('Preencha os campos obrigatórios.');
       return;
     }
@@ -405,14 +397,13 @@ function App() {
           clienteId: newOS.clienteId,
           placa: newOS.placa,
           rastreadorId: newOS.rastreadorId,
-          chipId: newOS.chipId,
           observacoes: newOS.observacoes,
           fotosUrls: newOS.fotosUrls
         });
         alert('Ordem de serviço avulsa enviada para aprovação do Administrador!');
       }
       setSelectedOSId('avulsa');
-      setNewOS({ placa: '', clienteId: '', rastreadorId: '', chipId: '', observacoes: '', fotosUrls: [] });
+      setNewOS({ placa: '', clienteId: '', rastreadorId: '', observacoes: '', fotosUrls: [] });
       carregarDados();
       setCurrentPage('tecnico-caixa');
     } catch (err: any) {
@@ -422,7 +413,7 @@ function App() {
 
   const handleScheduleOS = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!scheduleOS.clienteId || !scheduleOS.placa || !scheduleOS.tecnicoId || !scheduleOS.rastreadorId || !scheduleOS.chipId) {
+    if (!scheduleOS.clienteId || !scheduleOS.placa || !scheduleOS.tecnicoId || !scheduleOS.rastreadorId) {
       alert('Preencha os campos obrigatórios.');
       return;
     }
@@ -433,14 +424,13 @@ function App() {
         clienteId: scheduleOS.clienteId,
         placa: scheduleOS.placa.toUpperCase(),
         rastreadorId: scheduleOS.rastreadorId,
-        chipId: scheduleOS.chipId,
         observacoes: scheduleOS.observacoes,
         status: 'AGENDADA',
         fotosUrls: []
       });
 
       alert('Instalação agendada e enviada para a Caixa de Entrada do Técnico!');
-      setScheduleOS({ clienteId: '', placa: '', tecnicoId: '', rastreadorId: '', chipId: '', observacoes: '' });
+      setScheduleOS({ clienteId: '', placa: '', tecnicoId: '', rastreadorId: '', observacoes: '' });
       carregarDados();
       setCurrentPage('ordens');
     } catch (err: any) {
@@ -578,44 +568,26 @@ function App() {
     }
   };
 
-  // Cadastrar Rastreador
-  const handleCadastrarRastreador = async (e: React.FormEvent) => {
+  // Cadastrar Equipamento
+  const handleCadastrarEquipamento = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRastreador.identificador) return;
+    if (!newEquipamento.identificador) return;
     try {
       await api.equipamentos.create({
-        tipo: 'RASTREADOR',
-        identificador: newRastreador.identificador,
-        marca: newRastreador.marca || undefined,
-        modelo: newRastreador.modelo || undefined
+        identificador: newEquipamento.identificador,
+        iccid: newEquipamento.iccid || undefined,
+        marca: newEquipamento.marca || undefined,
+        modelo: newEquipamento.modelo || undefined,
+        numeroLinha: newEquipamento.numeroLinha || undefined,
+        operadora: newEquipamento.operadora || undefined,
+        apn: newEquipamento.apn || undefined
       });
-      alert('Rastreador cadastrado no estoque com sucesso!');
-      setNewRastreador({ identificador: '', marca: '', modelo: '', observacoes: '' });
+      alert('Equipamento cadastrado no estoque com sucesso!');
+      setNewEquipamento({ identificador: '', iccid: '', marca: '', modelo: '', numeroLinha: '', operadora: '', apn: '', observacoes: '' });
       carregarDados();
       setCurrentPage('estoque');
     } catch (err: any) {
-      alert('Erro ao cadastrar rastreador: ' + err.message);
-    }
-  };
-
-  // Cadastrar Chip
-  const handleCadastrarChip = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newChip.identificador) return;
-    try {
-      await api.equipamentos.create({
-        tipo: 'CHIP',
-        identificador: newChip.identificador,
-        numeroLinha: newChip.numeroLinha || undefined,
-        operadora: newChip.operadora || undefined,
-        apn: newChip.apn || undefined
-      });
-      alert('Chip cadastrado no estoque com sucesso!');
-      setNewChip({ identificador: '', numeroLinha: '', operadora: '', apn: '' });
-      carregarDados();
-      setCurrentPage('estoque');
-    } catch (err: any) {
-      alert('Erro ao cadastrar chip: ' + err.message);
+      alert('Erro ao cadastrar equipamento: ' + err.message);
     }
   };
 
@@ -1258,7 +1230,7 @@ function App() {
                               <td>{v.marca || 'N/A'} - {v.modelo || 'N/A'}</td>
                               <td>{v.cor || 'N/A'} / {v.ano || 'N/A'}</td>
                               <td>{instalacaoAtiva?.rastreadorId?.identificador || 'N/A'}</td>
-                              <td>{instalacaoAtiva?.chipId?.identificador || 'N/A'}</td>
+                              <td>{instalacaoAtiva?.rastreadorId?.iccid || 'N/A'}</td>
                               <td>
                                 <span className={`status-badge ${instalacaoAtiva ? 'active' : 'inactive'}`}>
                                   {instalacaoAtiva ? 'INSTALADO & ATIVO' : 'SEM DISPOSITIVO'}
@@ -1297,9 +1269,6 @@ function App() {
                           </p>
                           <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
                             Rastreador IMEI: <strong>{h.rastreadorId?.identificador} ({h.rastreadorId?.marca} {h.rastreadorId?.modelo})</strong>
-                          </p>
-                          <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
-                            Chip ICCID: <strong>{h.chipId?.identificador} ({h.chipId?.operadora} - {h.chipId?.numeroLinha})</strong>
                           </p>
                           {h.observacao && (
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
@@ -1489,7 +1458,7 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Status:</label>
                 <select value={filtroEstoqueStatus} onChange={e => setFiltroEstoqueStatus(e.target.value)} style={{ flex: 1 }}>
-                  <option value="todos">Todos</option>
+                  {filtroEstoqueStatus === 'todos' && <option value="todos">Todos os Equipamentos</option>}
                   <option value="ESTOQUE">Em Estoque</option>
                   <option value="COM_TECNICO">Com Técnico</option>
                   <option value="INSTALADO">Instalado</option>
@@ -1498,7 +1467,6 @@ function App() {
               </div>
               <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 {equipamentos.filter(eq =>
-                  (filtroEstoqueTipo === 'todos' || eq.tipo === filtroEstoqueTipo) &&
                   (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
                 ).length} equipamento(s)
               </div>
@@ -1522,15 +1490,14 @@ function App() {
                   <tbody>
                     {equipamentos
                       .filter(eq =>
-                        (filtroEstoqueTipo === 'todos' || eq.tipo === filtroEstoqueTipo) &&
                         (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
                       )
                       .map(eq => (
                         <React.Fragment key={eq._id}>
                           <tr>
                             <td>
-                              <span className={`badge ${eq.tipo === 'RASTREADOR' ? 'badge-info' : 'badge-success'}`}>
-                                {eq.tipo === 'RASTREADOR' ? '📡 RASTREADOR' : '📶 CHIP'}
+                              <span className="badge badge-info">
+                                📡 EQUIPAMENTO
                               </span>
                             </td>
                             <td><strong style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{eq.identificador}</strong></td>
@@ -1562,7 +1529,8 @@ function App() {
                                     className="btn btn-secondary"
                                     style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
                                     onClick={() => {
-                                      setTransferindoId(transferindoId === eq._id ? null : eq._id);
+                                      const isTransfering = transferindoId === eq._id;
+                                      setTransferindoId(isTransfering ? null : eq._id);
                                       setTecnicoParaTransferencia('');
                                     }}
                                   >
@@ -1625,7 +1593,6 @@ function App() {
                       ))
                     }
                     {equipamentos.filter(eq =>
-                      (filtroEstoqueTipo === 'todos' || eq.tipo === filtroEstoqueTipo) &&
                       (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
                     ).length === 0 && (
                       <tr>
@@ -1643,13 +1610,13 @@ function App() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginTop: '1.5rem' }}>
               <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
-                  {equipamentos.filter(e => e.tipo === 'RASTREADOR').length}
+                  <p style={{ margin: 0 }}><strong>{equipamentos.length}</strong> Total</p>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>📡 Rastreadores</div>
               </div>
               <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--success)' }}>
-                  {equipamentos.filter(e => e.tipo === 'CHIP').length}
+                  <p style={{ margin: 0 }}><strong>{equipamentos.filter(e => !!e.iccid).length}</strong> Em Linhas</p>
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>📶 Chips</div>
               </div>
@@ -1669,100 +1636,56 @@ function App() {
           </div>
         )}
 
-        {/* --- PÁGINA: CADASTRAR RASTREADOR --- */}
-        {currentPage === 'estoque-cadastro-rastreador' && (
-          <div style={{ maxWidth: '580px', margin: '0 auto' }}>
+        {/* --- PÁGINA: CADASTRAR EQUIPAMENTO UNIFICADO --- */}
+        {currentPage === 'estoque-cadastro-equipamento' && (
+          <div style={{ maxWidth: '680px', margin: '0 auto' }}>
             <div className="view-header">
-              <h1>Cadastrar Rastreador</h1>
+              <h1>Cadastrar Equipamento</h1>
               <button className="btn btn-secondary" onClick={() => setCurrentPage('estoque')}>Voltar</button>
             </div>
             <div className="card">
-              <form onSubmit={handleCadastrarRastreador} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="form-group">
-                  <label>IMEI do Rastreador <span style={{ color: 'var(--primary)' }}>*</span></label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 358293029384931 (15 dígitos)"
-                    value={newRastreador.identificador}
-                    onChange={e => setNewRastreador({ ...newRastreador, identificador: e.target.value })}
-                    maxLength={20}
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Número IMEI único do dispositivo GPS.</small>
-                </div>
+              <form onSubmit={handleCadastrarEquipamento} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
-                    <label>Marca</label>
+                    <label>IMEI do Rastreador <span style={{ color: 'var(--primary)' }}>*</span></label>
                     <input
                       type="text"
-                      placeholder="Ex: Teltonika, Suntech"
-                      value={newRastreador.marca}
-                      onChange={e => setNewRastreador({ ...newRastreador, marca: e.target.value })}
+                      placeholder="Ex: 358293029384931"
+                      value={newEquipamento.identificador}
+                      onChange={e => setNewEquipamento({ ...newEquipamento, identificador: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Modelo</label>
+                    <label>ICCID do Chip (Embutido)</label>
                     <input
                       type="text"
-                      placeholder="Ex: FMB920, ST310"
-                      value={newRastreador.modelo}
-                      onChange={e => setNewRastreador({ ...newRastreador, modelo: e.target.value })}
+                      placeholder="Ex: 8955102003948576302"
+                      value={newEquipamento.iccid}
+                      onChange={e => setNewEquipamento({ ...newEquipamento, iccid: e.target.value })}
                     />
                   </div>
                 </div>
-                <div className="form-group">
-                  <label>Observações</label>
-                  <textarea
-                    placeholder="Informações adicionais sobre o equipamento..."
-                    value={newRastreador.observacoes}
-                    onChange={e => setNewRastreador({ ...newRastreador, observacoes: e.target.value })}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>📡 Cadastrar no Estoque</button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setCurrentPage('estoque')}>Cancelar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
 
-        {/* --- PÁGINA: CADASTRAR CHIP --- */}
-        {currentPage === 'estoque-cadastro-chip' && (
-          <div style={{ maxWidth: '580px', margin: '0 auto' }}>
-            <div className="view-header">
-              <h1>Cadastrar Chip SIM</h1>
-              <button className="btn btn-secondary" onClick={() => setCurrentPage('estoque')}>Voltar</button>
-            </div>
-            <div className="card">
-              <form onSubmit={handleCadastrarChip} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="form-group">
-                  <label>ICCID do Chip <span style={{ color: 'var(--primary)' }}>*</span></label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 8955102003948576302"
-                    value={newChip.identificador}
-                    onChange={e => setNewChip({ ...newChip, identificador: e.target.value })}
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Número ICCID impresso no cartão SIM.</small>
-                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Marca (GPS)</label>
+                    <input type="text" placeholder="Ex: Teltonika" value={newEquipamento.marca} onChange={e => setNewEquipamento({ ...newEquipamento, marca: e.target.value })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Modelo (GPS)</label>
+                    <input type="text" placeholder="Ex: FMB920" value={newEquipamento.modelo} onChange={e => setNewEquipamento({ ...newEquipamento, modelo: e.target.value })} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                   <div className="form-group">
                     <label>Número da Linha</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: (21) 98765-4321"
-                      value={newChip.numeroLinha}
-                      onChange={e => setNewChip({ ...newChip, numeroLinha: e.target.value })}
-                    />
+                    <input type="text" placeholder="Ex: (21) 98765-4321" value={newEquipamento.numeroLinha} onChange={e => setNewEquipamento({ ...newEquipamento, numeroLinha: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>Operadora</label>
-                    <select
-                      value={newChip.operadora}
-                      onChange={e => setNewChip({ ...newChip, operadora: e.target.value })}
-                    >
+                    <select value={newEquipamento.operadora} onChange={e => setNewEquipamento({ ...newEquipamento, operadora: e.target.value })}>
                       <option value="">Selecione...</option>
                       <option value="Claro">Claro</option>
                       <option value="Vivo">Vivo</option>
@@ -1771,19 +1694,22 @@ function App() {
                       <option value="Algar">Algar</option>
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label>APN</label>
+                    <input type="text" placeholder="Ex: zap.vivo.com.br" value={newEquipamento.apn} onChange={e => setNewEquipamento({ ...newEquipamento, apn: e.target.value })} />
+                  </div>
                 </div>
+
                 <div className="form-group">
-                  <label>APN</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: zap.vivo.com.br"
-                    value={newChip.apn}
-                    onChange={e => setNewChip({ ...newChip, apn: e.target.value })}
+                  <label>Observações</label>
+                  <textarea
+                    placeholder="Informações adicionais..."
+                    value={newEquipamento.observacoes}
+                    onChange={e => setNewEquipamento({ ...newEquipamento, observacoes: e.target.value })}
                   />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Configuração de acesso a dados da operadora.</small>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>📶 Cadastrar no Estoque</button>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>📡 Cadastrar no Estoque</button>
                   <button type="button" className="btn btn-secondary" onClick={() => setCurrentPage('estoque')}>Cancelar</button>
                 </div>
               </form>
@@ -1829,10 +1755,6 @@ function App() {
                         <div className="os-card-col">
                           <span>Rastreador</span>
                           <strong>{(os.rastreadorId as any)?.identificador || 'N/A'}</strong>
-                        </div>
-                        <div className="os-card-col">
-                          <span>Chip ICCID</span>
-                          <strong>{(os.chipId as any)?.identificador || 'N/A'}</strong>
                         </div>
                       </div>
                       <div className="os-card-photos">
@@ -1943,29 +1865,10 @@ function App() {
                   >
                     <option value="">Selecione...</option>
                     {equipamentos
-                      .filter(eq => eq.tipo === 'RASTREADOR' && (eq.status === 'ESTOQUE' || (eq.status === 'COM_TECNICO' && (typeof eq.tecnicoResponsavelId === 'string' ? eq.tecnicoResponsavelId === scheduleOS.tecnicoId : eq.tecnicoResponsavelId?._id === scheduleOS.tecnicoId))))
+                      .filter(eq => (eq.status === 'ESTOQUE' || (eq.status === 'COM_TECNICO' && (typeof eq.tecnicoResponsavelId === 'string' ? eq.tecnicoResponsavelId === scheduleOS.tecnicoId : eq.tecnicoResponsavelId?._id === scheduleOS.tecnicoId))))
                       .map(eq => (
                         <option key={eq._id} value={eq._id}>
                           {eq.identificador} ({eq.modelo}) - {eq.status === 'ESTOQUE' ? 'Estoque Central' : 'Com Técnico'}
-                        </option>
-                      ))
-                    }
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Chip ICCID (Em Estoque ou com o Técnico)</label>
-                  <select
-                    value={scheduleOS.chipId}
-                    onChange={(e) => setScheduleOS({ ...scheduleOS, chipId: e.target.value })}
-                    required
-                  >
-                    <option value="">Selecione...</option>
-                    {equipamentos
-                      .filter(eq => eq.tipo === 'CHIP' && (eq.status === 'ESTOQUE' || (eq.status === 'COM_TECNICO' && (typeof eq.tecnicoResponsavelId === 'string' ? eq.tecnicoResponsavelId === scheduleOS.tecnicoId : eq.tecnicoResponsavelId?._id === scheduleOS.tecnicoId))))
-                      .map(eq => (
-                        <option key={eq._id} value={eq._id}>
-                          {eq.identificador} ({eq.operadora}) - {eq.status === 'ESTOQUE' ? 'Estoque Central' : 'Com Técnico'}
                         </option>
                       ))
                     }
@@ -2567,7 +2470,6 @@ function App() {
                   const veiculo = os.veiculoId as any;
                   const cliente = veiculo?.clienteId as any;
                   const rastreador = os.rastreadorId as any;
-                  const chip = os.chipId as any;
                   const isRejeitada = os.status === 'REJEITADO';
 
                   return (
@@ -2622,7 +2524,6 @@ function App() {
                         <div>
                           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Dispositivos Separados</span>
                           <span style={{ fontSize: '0.75rem', display: 'block', color: 'var(--text-light)' }}>📡 IMEI: {rastreador?.identificador || 'N/A'}</span>
-                          <span style={{ fontSize: '0.75rem', display: 'block', color: 'var(--text-light)' }}>📶 Chip: {chip?.identificador || 'N/A'}</span>
                         </div>
                       </div>
 
@@ -2674,7 +2575,7 @@ function App() {
                         style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem' }}
                         onClick={() => {
                           setSelectedOSId('avulsa');
-                          setNewOS({ placa: '', clienteId: '', rastreadorId: '', chipId: '', observacoes: '', fotosUrls: [] });
+                          setNewOS({ placa: '', clienteId: '', rastreadorId: '', observacoes: '', fotosUrls: [] });
                           setCurrentPage('tecnico-caixa');
                         }}
                       >
@@ -2745,28 +2646,8 @@ function App() {
                         {equipamentos.find(eq => eq._id === newOS.rastreadorId)?.identificador || 'Rastreador Agendado'}
                       </option>
                     )}
-                    {equipamentos.filter(eq => eq.tipo === 'RASTREADOR' && eq.status === 'COM_TECNICO').map(eq => (
+                    {equipamentos.filter(eq => eq.status === 'COM_TECNICO').map(eq => (
                       <option key={eq._id} value={eq._id}>{eq.identificador} ({eq.modelo})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Chip ICCID (Em sua Posse)</label>
-                  <select
-                    value={newOS.chipId}
-                    onChange={(e) => setNewOS({ ...newOS, chipId: e.target.value })}
-                    required
-                    disabled={selectedOSId !== 'avulsa'}
-                  >
-                    <option value="">Selecione...</option>
-                    {selectedOSId !== 'avulsa' && newOS.chipId && (
-                      <option value={newOS.chipId}>
-                        {equipamentos.find(eq => eq._id === newOS.chipId)?.identificador || 'Chip Agendado'}
-                      </option>
-                    )}
-                    {equipamentos.filter(eq => eq.tipo === 'CHIP' && eq.status === 'COM_TECNICO').map(eq => (
-                      <option key={eq._id} value={eq._id}>{eq.identificador} ({eq.operadora})</option>
                     ))}
                   </select>
                 </div>
