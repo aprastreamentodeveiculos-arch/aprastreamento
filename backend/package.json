@@ -24,7 +24,6 @@
     "mongodb-memory-server": "^11.2.0",
     "mongoose": "^9.7.2",
     "multer": "^2.2.0",
-    "resend": "^6.16.0",
     "typescript": "^6.0.3"
   },
   "devDependencies": {

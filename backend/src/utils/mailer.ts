@@ -1,37 +1,53 @@
-import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// O Resend não usa SMTP puro, logo não sofrerá bloqueio de porta pela Render.
-// Ele necessita de uma chave de API válida no .env: RESEND_API_KEY
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-/**
- * Função utilitária para enviar e-mails via API do Resend
- * @param to E-mail do destinatário
- * @param subject Assunto do e-mail
- * @param text Conteúdo em texto plano
- * @param html (Opcional) Conteúdo em HTML
- */
+// Enviaremos e-mail usando a API nativa da Brevo.com via requisição HTTPS padrão (fetch).
+// Não usamos bibliotecas pesadas para garantir o build rápido e sem erros.
 export const sendEmail = async (to: string, subject: string, text: string, html?: string) => {
   try {
-    const { data, error } = await resend.emails.send({
-      // No plano free do Resend, apenas "onboarding@resend.dev" pode ser usado como remetente
-      from: 'AP Rastro Suporte <onboarding@resend.dev>',
-      to,
-      subject,
-      text,
-      html: html || text,
-    });
+    const apiKey = process.env.BREVO_API_KEY;
 
-    if (error) {
-      console.error(`❌ Erro ao enviar e-mail para ${to} via Resend:`, error);
+    if (!apiKey) {
+      console.error('❌ Chave BREVO_API_KEY não configurada no servidor.');
       return false;
     }
 
-    console.log(`✅ E-mail enviado com sucesso para ${to}. ID Resend: ${data?.id}`);
+    const payload = {
+      sender: {
+        name: 'AP Rastro Suporte',
+        email: 'andrewlameira30@gmail.com' // Seu email validado na Brevo
+      },
+      to: [
+        {
+          email: to
+        }
+      ],
+      subject: subject,
+      textContent: text,
+      htmlContent: html || text
+    };
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      console.error(`❌ Erro ao enviar e-mail para ${to} via Brevo:`, err);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log(`✅ E-mail enviado com sucesso para ${to}. ID Brevo: ${data.messageId}`);
     return true;
+
   } catch (error) {
     console.error(`❌ Erro inesperado ao disparar e-mail para ${to}:`, error);
     return false;
