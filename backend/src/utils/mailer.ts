@@ -16,7 +16,7 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
     const payload = {
       sender: {
         name: 'AP Rastro Suporte',
-        email: 'andrewlameira30@gmail.com' // Seu email validado na Brevo
+        email: 'aprastreamento@gmail.com' // Seu email validado na Brevo
       },
       to: [
         {
