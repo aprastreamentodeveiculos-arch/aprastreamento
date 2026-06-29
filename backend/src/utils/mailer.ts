@@ -44,7 +44,7 @@ export const sendEmail = async (to: string, subject: string, text: string, html?
       return false;
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     console.log(`✅ E-mail enviado com sucesso para ${to}. ID Brevo: ${data.messageId}`);
     return true;
 
