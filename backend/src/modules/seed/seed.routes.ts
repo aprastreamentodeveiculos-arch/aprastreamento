@@ -8,6 +8,7 @@ import { HistoricoInstalacao } from '../historico/historico.model';
 import { Mensalidade } from '../financeiro/mensalidade.model';
 import { Despesa } from '../caixa/despesa.model';
 import { CategoriaDespesa } from '../caixa/categoriaDespesa.model';
+import { Plano } from '../planos/plano.model';
 
 const router = Router();
 
@@ -22,8 +23,54 @@ export const runSeeding = async () => {
   await Mensalidade.deleteMany({});
   await Despesa.deleteMany({});
   await CategoriaDespesa.deleteMany({});
+  await Plano.deleteMany({});
 
   console.log('🧹 Banco de dados limpo para seeding de 30 clientes...');
+
+  // 1.5 Criar Planos Padrão no Seeding
+  const planoPrata = await Plano.create({
+    nome: 'Plano Prata Mensal',
+    tipoCobranca: 'POR_VEICULO',
+    periodicidade: 'MENSAL',
+    valorBase: 85.00,
+    descricao: 'Monitoramento unitário com faturamento mensal padrão.',
+    ativo: true
+  });
+
+  const planoOuro = await Plano.create({
+    nome: 'Plano Ouro Trimestral com Fidelidade 12m',
+    tipoCobranca: 'POR_VEICULO',
+    periodicidade: 'TRIMESTRAL',
+    valorBase: 90.00,
+    fidelidadeMeses: 12,
+    descontoFidelidadePct: 10,
+    descricao: 'Monitoramento trimestral com desconto de fidelidade de 10%.',
+    ativo: true
+  });
+
+  const planoCorp = await Plano.create({
+    nome: 'Plano Corporativo Fixo Semestral',
+    tipoCobranca: 'FIXO_GLOBAL',
+    periodicidade: 'SEMESTRAL',
+    valorBase: 600.00,
+    descricao: 'Faturamento corporativo fixo a cada 6 meses, independente da frota.',
+    ativo: true
+  });
+
+  const planoEscalonado = await Plano.create({
+    nome: 'Plano Escalonado Frota',
+    tipoCobranca: 'ESCALONADO_FROTA',
+    periodicidade: 'MENSAL',
+    faixasPreco: [
+      { de: 1, ate: 5, valor: 80.00 },
+      { de: 6, ate: 15, valor: 70.00 },
+      { de: 16, valor: 60.00 }
+    ],
+    descricao: 'Preço flat unitário decrescente baseado no volume de frotas ativas.',
+    ativo: true
+  });
+
+  const planosCriados = [planoPrata, planoOuro, planoCorp, planoEscalonado];
 
   // 2. Criar Técnicos
   const tecnicosCriados = [];
@@ -125,18 +172,36 @@ export const runSeeding = async () => {
   // Gerar dados sequencialmente para cada cliente
   for (let i = 0; i < templatesClientes.length; i++) {
     const temp = templatesClientes[i];
+    
+    // Sortear um plano (20% de chance de ficar sem plano e usar o fallback legado)
+    const randVal = Math.random();
+    let planoSorteado: any = null;
+    let planoId: any = null;
+    if (randVal > 0.2) {
+      planoSorteado = planosCriados[Math.floor(Math.random() * planosCriados.length)];
+      planoId = planoSorteado._id;
+    }
+
+    // Escolher um dia de vencimento aleatório: 5, 10, 15, 20, 25
+    const diasVencimentoValidos = [5, 10, 15, 20, 25];
+    const diaVencimento = diasVencimentoValidos[Math.floor(Math.random() * diasVencimentoValidos.length)];
+
     const cliente = await Cliente.create({
       nome: temp.nome,
       documento: temp.doc,
       email: temp.email,
       whatsapp: temp.zap,
       endereco: { rua: 'Av. Principal', numero: String(100 + i), cidade: temp.cidade, estado: temp.estado, cep: '00000-000' },
-      ativo: true
+      ativo: true,
+      planoId,
+      diaVencimento
     });
 
     // PJ costuma ter mais veículos que PF
     const isPJ = temp.nome.includes('Ltda') || temp.nome.includes('S/A') || temp.nome.includes('Supermercado') || temp.nome.includes('Locadora') || temp.nome.includes('Cooperativa');
     const numVeiculos = isPJ ? Math.floor(Math.random() * 3) + 2 : 1; // PJ: 2-4 veículos, PF: 1 veículo
+
+    const veiculosDoCliente: { mesInstalacao: number }[] = [];
 
     for (let v = 0; v < numVeiculos; v++) {
       countVeiculos++;
@@ -190,21 +255,23 @@ export const runSeeding = async () => {
       // Data de instalação aleatória (Abril, Maio ou Junho de 2026)
       const rand = Math.random();
       let dataInstalacao: Date;
-      let mesesFaturamento: number[] = [];
+      let mesInstalacao = 5; // Junho default
 
       if (rand < 0.45) {
         // Instalado em Abril 2026 (dia aleatório 1 a 20)
         dataInstalacao = new Date(2026, 3, Math.floor(Math.random()*20)+1, 14, 0, 0);
-        mesesFaturamento = [3, 4, 5]; // Abril, Maio, Junho
+        mesInstalacao = 3;
       } else if (rand < 0.85) {
         // Instalado em Maio 2026
         dataInstalacao = new Date(2026, 4, Math.floor(Math.random()*20)+1, 14, 0, 0);
-        mesesFaturamento = [4, 5]; // Maio, Junho
+        mesInstalacao = 4;
       } else {
         // Instalado em Junho 2026
         dataInstalacao = new Date(2026, 5, Math.floor(Math.random()*15)+1, 14, 0, 0);
-        mesesFaturamento = [5]; // Apenas Junho
+        mesInstalacao = 5;
       }
+
+      veiculosDoCliente.push({ mesInstalacao });
 
       countHistoricos++;
       await HistoricoInstalacao.create({
@@ -214,57 +281,100 @@ export const runSeeding = async () => {
         tecnicoId: tec._id,
         dataInstalacao
       });
+    }
 
-      // Gerar mensalidades com status coerentes por mês
-      for (const mesIndex of mesesFaturamento) {
-        countMensalidades++;
-        const valor = 80.00;
-        const dataEmissao = new Date(2026, mesIndex, 1);
-        const dataVencimento = new Date(2026, mesIndex, 10);
-        
-        let status: 'PAGO' | 'PENDENTE' | 'ATRASADO' = 'PENDENTE';
-        let dataPagamento: Date | undefined;
+    // Gerar mensalidades consolidadas baseadas no plano e periodicidade
+    const menorMes = veiculosDoCliente.length > 0 ? Math.min(...veiculosDoCliente.map(v => v.mesInstalacao)) : 5;
+    let ultimoMesFaturado: number | null = null;
 
-        if (mesIndex === 3) {
-          // Abril: 95% pago
-          const rStatus = Math.random();
-          if (rStatus < 0.95) {
-            status = 'PAGO';
-            dataPagamento = new Date(2026, 3, 5 + Math.floor(Math.random() * 5));
-          } else {
-            status = 'ATRASADO';
-          }
-        } else if (mesIndex === 4) {
-          // Maio: 85% pago, 15% atrasado
-          const rStatus = Math.random();
-          if (rStatus < 0.85) {
-            status = 'PAGO';
-            dataPagamento = new Date(2026, 4, 5 + Math.floor(Math.random() * 5));
-          } else {
-            status = 'ATRASADO';
-          }
-        } else {
-          // Junho (Mês Atual): 15% pago adiantado, 75% pendente, 10% atrasado (vencimento dia 10 e hoje é dia 24, logo quem não pagou está atrasado)
-          const rStatus = Math.random();
-          if (rStatus < 0.20) {
-            status = 'PAGO';
-            dataPagamento = new Date(2026, 5, 8);
-          } else if (rStatus < 0.90) {
-            status = 'ATRASADO'; // passou do dia 10/06
-          } else {
-            status = 'PENDENTE'; // simulando vencimento postergado ou pendente
-          }
+    for (let m = menorMes; m <= 5; m++) {
+      // Verificar a periodicidade
+      if (ultimoMesFaturado !== null && planoSorteado) {
+        let mesesExigidos = 1;
+        if (planoSorteado.periodicidade === 'BIMESTRAL') mesesExigidos = 2;
+        else if (planoSorteado.periodicidade === 'TRIMESTRAL') mesesExigidos = 3;
+        else if (planoSorteado.periodicidade === 'SEMESTRAL') mesesExigidos = 6;
+        else if (planoSorteado.periodicidade === 'ANUAL') mesesExigidos = 12;
+
+        if (m - ultimoMesFaturado < mesesExigidos) {
+          // Pula este mês devido à periodicidade do plano
+          continue;
+        }
+      }
+
+      // Veículos do cliente instalados até este mês
+      const veiculosCountNoMes = veiculosDoCliente.filter(v => v.mesInstalacao <= m).length;
+      if (veiculosCountNoMes === 0) continue;
+
+      let valorMensalidade = veiculosCountNoMes * 80.00; // Fallback padrão
+      if (planoSorteado) {
+        let valorOriginal = 0;
+        if (planoSorteado.tipoCobranca === 'POR_VEICULO') {
+          valorOriginal = veiculosCountNoMes * planoSorteado.valorBase;
+        } else if (planoSorteado.tipoCobranca === 'FIXO_GLOBAL') {
+          valorOriginal = planoSorteado.valorBase;
+        } else if (planoSorteado.tipoCobranca === 'ESCALONADO_FROTA') {
+          const faixa = planoSorteado.faixasPreco.find((f: any) => veiculosCountNoMes >= f.de && (!f.ate || veiculosCountNoMes <= f.ate));
+          const valUnit = faixa ? faixa.valor : 80.00;
+          valorOriginal = veiculosCountNoMes * valUnit;
         }
 
-        await Mensalidade.create({
-          clienteId: cliente._id,
-          valor,
-          dataEmissao,
-          dataVencimento,
-          dataPagamento,
-          status
-        });
+        // Desconto fidelidade
+        if (planoSorteado.descontoFidelidadePct > 0) {
+          const desc = valorOriginal * (planoSorteado.descontoFidelidadePct / 100);
+          valorOriginal = valorOriginal - desc;
+        }
+        valorMensalidade = valorOriginal;
       }
+
+      countMensalidades++;
+      const dataEmissao = new Date(2026, m, 1);
+      const dataVencimento = new Date(2026, m, diaVencimento);
+      
+      let status: 'PAGO' | 'PENDENTE' | 'ATRASADO' = 'PENDENTE';
+      let dataPagamento: Date | undefined;
+
+      if (m === 3) {
+        // Abril: 95% pago
+        const rStatus = Math.random();
+        if (rStatus < 0.95) {
+          status = 'PAGO';
+          dataPagamento = new Date(2026, 3, 5 + Math.floor(Math.random() * 5));
+        } else {
+          status = 'ATRASADO';
+        }
+      } else if (m === 4) {
+        // Maio: 85% pago
+        const rStatus = Math.random();
+        if (rStatus < 0.85) {
+          status = 'PAGO';
+          dataPagamento = new Date(2026, 4, 5 + Math.floor(Math.random() * 5));
+        } else {
+          status = 'ATRASADO';
+        }
+      } else {
+        // Junho: 20% pago, 70% atrasado (vencido), 10% pendente
+        const rStatus = Math.random();
+        if (rStatus < 0.20) {
+          status = 'PAGO';
+          dataPagamento = new Date(2026, 5, 8);
+        } else if (rStatus < 0.90) {
+          status = 'ATRASADO';
+        } else {
+          status = 'PENDENTE';
+        }
+      }
+
+      await Mensalidade.create({
+        clienteId: cliente._id,
+        valor: valorMensalidade,
+        dataEmissao,
+        dataVencimento,
+        dataPagamento,
+        status
+      });
+
+      ultimoMesFaturado = m;
     }
 
     // Atualizar quantidade de veículos no cliente

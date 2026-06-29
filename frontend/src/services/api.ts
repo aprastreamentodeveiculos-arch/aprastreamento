@@ -13,6 +13,26 @@ const API_BASE = getApiBase() + '/api';
 
 
 // Tipagem base
+export interface FaixaPreco {
+  de: number;
+  ate?: number;
+  valor: number;
+}
+
+export interface Plano {
+  _id: string;
+  nome: string;
+  tipoCobranca: 'POR_VEICULO' | 'FIXO_GLOBAL' | 'ESCALONADO_FROTA';
+  periodicidade: 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+  valorBase: number;
+  faixasPreco: FaixaPreco[];
+  fidelidadeMeses: number;
+  descontoFidelidadePct: number;
+  descricao?: string;
+  ativo: boolean;
+  createdAt?: string;
+}
+
 export interface Cliente {
   _id: string;
   nome: string;
@@ -29,6 +49,8 @@ export interface Cliente {
   };
   ativo: boolean;
   veiculosCount?: number;
+  planoId?: string | Plano | null;
+  diaVencimento?: number;
   createdAt?: string;
 }
 
@@ -128,6 +150,18 @@ async function request(url: string, options?: RequestInit) {
 
 // Serviços expostos
 export const api = {
+  // Planos
+  planos: {
+    list: (filtros?: { apenasAtivos?: boolean }): Promise<Plano[]> => {
+      const query = filtros?.apenasAtivos ? '?apenasAtivos=true' : '';
+      return request(`/planos${query}`);
+    },
+    create: (data: Partial<Plano>): Promise<Plano> => 
+      request('/planos', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Plano>): Promise<Plano> => 
+      request(`/planos/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
   // Clientes
   clientes: {
     list: (): Promise<Cliente[]> => request('/clientes'),

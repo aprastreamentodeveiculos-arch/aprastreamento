@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IEndereco {
   rua?: string;
@@ -16,6 +16,8 @@ export interface ICliente extends Document {
   whatsapp?: string;
   endereco?: IEndereco;
   ativo: boolean;
+  planoId?: Types.ObjectId | null;
+  diaVencimento: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,7 +37,9 @@ const ClienteSchema = new Schema<ICliente>({
   email: { type: String, trim: true, lowercase: true },
   whatsapp: { type: String, trim: true },
   endereco: { type: EnderecoSchema, default: {} },
-  ativo: { type: Boolean, default: true }
+  ativo: { type: Boolean, default: true },
+  planoId: { type: Schema.Types.ObjectId, ref: 'Plano', default: null },
+  diaVencimento: { type: Number, default: 10, enum: [5, 10, 15, 20, 25] }
 }, {
   timestamps: true
 });

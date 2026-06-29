@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import './App.css';
-import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa } from './services/api';
+import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 
 function App() {
   // Controle de Visualização e Perfis
   const [userRole, setUserRole] = useState<'admin' | 'tecnico'>('admin');
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
   const [userName, setUserName] = useState<string>('Andrew Gerente');
+
+  // Estados dos Planos
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [financeiroTab, setFinanceiroTab] = useState<'mensalidades' | 'planos'>('mensalidades');
+  const [isCriandoPlano, setIsCriandoPlano] = useState<boolean>(false);
+  const [newPlano, setNewPlano] = useState({
+    nome: '',
+    tipoCobranca: 'POR_VEICULO' as 'POR_VEICULO' | 'FIXO_GLOBAL' | 'ESCALONADO_FROTA',
+    periodicidade: 'MENSAL' as 'MENSAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL',
+    valorBase: '',
+    fidelidadeMeses: '0',
+    descontoFidelidadePct: '0',
+    descricao: ''
+  });
+  const [faixasPreco, setFaixasPreco] = useState<FaixaPreco[]>([{ de: 1, ate: undefined, valor: 80 }]);
 
   // Estados da Central de Suporte & Chamados
   const [isSupportModalOpen, setIsSupportModalOpen] = useState<boolean>(false);
@@ -58,7 +73,7 @@ function App() {
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
 
   // Estados dos formulários de cadastro
-  const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '' });
+  const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
   const [newTecnico, setNewTecnico] = useState({ nome: '', telefone: '' });
   const [newDespesa, setNewDespesa] = useState({ descricao: '', valor: '', data: new Date().toISOString().split('T')[0], categoria: '' });
   const [newOS, setNewOS] = useState<{
@@ -122,13 +137,14 @@ function App() {
   // Carregar dados gerais do banco de dados
   const carregarDados = async () => {
     try {
-      const [dataClientes, dataTecnicos, dataEquipamentos, dataOrdens, dataCategorias, dataMensalidades] = await Promise.all([
+      const [dataClientes, dataTecnicos, dataEquipamentos, dataOrdens, dataCategorias, dataMensalidades, dataPlanos] = await Promise.all([
         api.clientes.list(),
         api.tecnicos.list(),
         api.equipamentos.list(),
         api.ordens.list(),
         api.caixa.listCategorias(),
-        api.financeiro.list()
+        api.financeiro.list(),
+        api.planos.list()
       ]);
 
       setClientes(dataClientes);
@@ -137,6 +153,7 @@ function App() {
       setOrdens(dataOrdens);
       setCategorias(dataCategorias);
       setMensalidades(dataMensalidades);
+      setPlanos(dataPlanos);
 
       // Setar categoria inicial se houver
       if (dataCategorias.length > 0 && !newDespesa.categoria) {
@@ -201,8 +218,38 @@ function App() {
     filtrarDespesas();
   }, [buscaDespesa, filtroDespesaCat, filtroDespesaMes, despesas]);
 
-  // Cálculos Financeiros Dinâmicos
-  const totalReceitaEstimada = clientes.reduce((acc, c) => acc + ((c.veiculosCount || 0) * 80), 0); 
+  // Cálculos Financeiros Dinâmicos baseados nos Planos Reais dos Clientes
+  const totalReceitaEstimada = clientes.reduce((acc, c) => {
+    const veiculosCount = c.veiculosCount || 0;
+    if (veiculosCount === 0) return acc;
+
+    let valorCliente = veiculosCount * 80.00; // Fallback default
+    const plano = c.planoId as any;
+
+    if (plano) {
+      let valorOriginal = 0;
+      if (plano.tipoCobranca === 'POR_VEICULO') {
+        valorOriginal = veiculosCount * plano.valorBase;
+      } else if (plano.tipoCobranca === 'FIXO_GLOBAL') {
+        valorOriginal = plano.valorBase;
+      } else if (plano.tipoCobranca === 'ESCALONADO_FROTA') {
+        const faixas = plano.faixasPreco || [];
+        const faixa = faixas.find((f: any) => veiculosCount >= f.de && (!f.ate || veiculosCount <= f.ate));
+        const valorUnitario = faixa ? faixa.valor : 80.00;
+        valorOriginal = veiculosCount * valorUnitario;
+      }
+
+      // Desconto de fidelidade
+      if (plano.descontoFidelidadePct > 0) {
+        const desconto = valorOriginal * (plano.descontoFidelidadePct / 100);
+        valorOriginal = valorOriginal - desconto;
+      }
+
+      valorCliente = valorOriginal;
+    }
+
+    return acc + valorCliente;
+  }, 0); 
   const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
   const lucroReal = mensalidades.filter(m => m.status === 'PAGO').reduce((acc, m) => acc + m.valor, 0) - totalDespesas;
 
@@ -263,7 +310,7 @@ function App() {
     if (!newCliente.nome || !newCliente.documento) return;
     try {
       await api.clientes.create(newCliente);
-      setNewCliente({ nome: '', documento: '', email: '', whatsapp: '' });
+      setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
       alert('Cliente cadastrado com sucesso!');
       carregarDados();
       setCurrentPage('clientes'); // Redireciona de volta para a listagem
@@ -469,6 +516,65 @@ function App() {
       carregarDados();
     } catch (err: any) {
       alert('Erro ao rodar faturamento automático: ' + err.message);
+    }
+  };
+
+  // Cadastrar Novo Plano de Cobrança
+  const handleAddPlano = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlano.nome || !newPlano.tipoCobranca) return;
+    
+    try {
+      let faixasValidadas: FaixaPreco[] = [];
+      if (newPlano.tipoCobranca === 'ESCALONADO_FROTA') {
+        faixasValidadas = faixasPreco.map(f => ({
+          de: Number(f.de),
+          ate: f.ate ? Number(f.ate) : undefined,
+          valor: Number(f.valor)
+        }));
+        if (faixasValidadas.length === 0) {
+          alert('Por favor, adicione pelo menos uma faixa de preço.');
+          return;
+        }
+      }
+
+      await api.planos.create({
+        nome: newPlano.nome,
+        tipoCobranca: newPlano.tipoCobranca,
+        periodicidade: newPlano.periodicidade,
+        valorBase: newPlano.tipoCobranca !== 'ESCALONADO_FROTA' ? Number(newPlano.valorBase) : 0,
+        faixasPreco: faixasValidadas,
+        fidelidadeMeses: Number(newPlano.fidelidadeMeses),
+        descontoFidelidadePct: Number(newPlano.descontoFidelidadePct),
+        descricao: newPlano.descricao
+      });
+
+      alert('Plano de cobrança cadastrado com sucesso!');
+      setNewPlano({
+        nome: '',
+        tipoCobranca: 'POR_VEICULO',
+        periodicidade: 'MENSAL',
+        valorBase: '',
+        fidelidadeMeses: '0',
+        descontoFidelidadePct: '0',
+        descricao: ''
+      });
+      setFaixasPreco([{ de: 1, ate: undefined, valor: 80 }]);
+      setIsCriandoPlano(false);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao cadastrar plano: ' + err.message);
+    }
+  };
+
+  // Alterar Status do Plano (Ativo/Inativo)
+  const handleTogglePlanoStatus = async (id: string, ativoAtual: boolean) => {
+    try {
+      await api.planos.update(id, { ativo: !ativoAtual });
+      alert(`Plano ${ativoAtual ? 'desativado' : 'ativado'} com sucesso!`);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao alterar status do plano: ' + err.message);
     }
   };
 
@@ -851,7 +957,28 @@ function App() {
                         <td>
                           <span className="badge badge-info">{(c.veiculosCount || 0)} veículos</span>
                         </td>
-                        <td><strong>R$ {((c.veiculosCount || 0) * 80).toFixed(2)}</strong></td>
+                        <td>
+                          <strong>
+                            R$ {(() => {
+                              const vCount = c.veiculosCount || 0;
+                              if (vCount === 0) return '0.00';
+                              const p = c.planoId as any;
+                              let val = vCount * 80.00;
+                              if (p) {
+                                if (p.tipoCobranca === 'POR_VEICULO') val = vCount * p.valorBase;
+                                else if (p.tipoCobranca === 'FIXO_GLOBAL') val = p.valorBase;
+                                else if (p.tipoCobranca === 'ESCALONADO_FROTA') {
+                                  const fx = p.faixasPreco?.find((f: any) => vCount >= f.de && (!f.ate || vCount <= f.ate));
+                                  val = vCount * (fx ? fx.valor : 80.00);
+                                }
+                                if (p.descontoFidelidadePct > 0) {
+                                  val = val - (val * (p.descontoFidelidadePct / 100));
+                                }
+                              }
+                              return val.toFixed(2);
+                            })()}
+                          </strong>
+                        </td>
                         <td>
                           <span className={`status-badge ${(c.veiculosCount || 0) > 0 ? 'active' : 'pending'}`}>
                             {(c.veiculosCount || 0) > 0 ? 'EM DIA' : 'SEM COBRANÇA'}
@@ -885,8 +1012,9 @@ function App() {
                       <th>Cliente</th>
                       <th>Documento</th>
                       <th>WhatsApp</th>
+                      <th>Plano</th>
                       <th>Qtd. Veículos</th>
-                      <th>Vencimento Padrão</th>
+                      <th>Dia Vencimento</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -904,11 +1032,16 @@ function App() {
                           </div>
                         </td>
                         <td>{c.documento}</td>
-                        <td>{c.whatsapp}</td>
+                        <td>{c.whatsapp || 'N/A'}</td>
+                        <td>
+                          <span className="badge badge-info" style={{ background: 'var(--bg-deep)' }}>
+                            {(c.planoId as any)?.nome || 'Padrão'}
+                          </span>
+                        </td>
                         <td>
                           <span className="badge badge-info">{(c.veiculosCount || 0)} veículos</span>
                         </td>
-                        <td>Dia 10</td>
+                        <td>Dia {c.diaVencimento || 10}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -968,6 +1101,37 @@ function App() {
                     onChange={(e) => setNewCliente({ ...newCliente, whatsapp: e.target.value })}
                   />
                 </div>
+
+                <div className="form-group">
+                  <label>Plano de Cobrança</label>
+                  <select
+                    value={newCliente.planoId}
+                    onChange={(e) => setNewCliente({ ...newCliente, planoId: e.target.value })}
+                  >
+                    <option value="">Padrão (R$ 80,00 por veículo)</option>
+                    {planos.filter(p => p.ativo).map(p => (
+                      <option key={p._id} value={p._id}>
+                        {p.nome} ({p.tipoCobranca === 'POR_VEICULO' ? `R$ ${p.valorBase.toFixed(2)}/veíc.` : p.tipoCobranca === 'FIXO_GLOBAL' ? `R$ ${p.valorBase.toFixed(2)} Fixo` : 'Escalonado Frota'}) - {p.periodicidade}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Dia de Vencimento da Fatura</label>
+                  <select
+                    value={newCliente.diaVencimento}
+                    onChange={(e) => setNewCliente({ ...newCliente, diaVencimento: Number(e.target.value) })}
+                    required
+                  >
+                    <option value={5}>Dia 5</option>
+                    <option value={10}>Dia 10 (Padrão)</option>
+                    <option value={15}>Dia 15</option>
+                    <option value={20}>Dia 20</option>
+                    <option value={25}>Dia 25</option>
+                  </select>
+                </div>
+
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                   <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setCurrentPage('clientes')}>
                     Cancelar
@@ -1018,6 +1182,14 @@ function App() {
               <div className="os-card-col">
                 <span>E-mail</span>
                 <strong>{selectedClientePanorama.cliente.email || 'N/A'}</strong>
+              </div>
+              <div className="os-card-col">
+                <span>Plano Contratado</span>
+                <strong>{selectedClientePanorama.cliente.planoId?.nome || 'Padrão (R$ 80,00/veíc.)'}</strong>
+              </div>
+              <div className="os-card-col">
+                <span>Vencimento Mensal</span>
+                <strong>Dia {selectedClientePanorama.cliente.diaVencimento || 10}</strong>
               </div>
               <div className="os-card-col" style={{ gridColumn: 'span 2' }}>
                 <span>Endereço Completo</span>
@@ -1822,68 +1994,371 @@ function App() {
           </div>
         )}
 
-        {/* --- PÁGINA: MENSALIDADES --- */}
+        {/* --- PÁGINA: FINANCEIRO (MENSALIDADES E PLANOS) --- */}
         {currentPage === 'financeiro' && (
           <div>
             <div className="view-header">
-              <h1>Gestão de Mensalidades</h1>
-              <button className="btn btn-primary" onClick={handleForcarFaturamento}>
-                ⚙️ Executar Ciclo de Faturamento
+              <h1>Gestão Financeira</h1>
+              {financeiroTab === 'mensalidades' && (
+                <button className="btn btn-primary" onClick={handleForcarFaturamento}>
+                  ⚙️ Executar Ciclo de Faturamento
+                </button>
+              )}
+            </div>
+
+            {/* Menu de Abas Internas */}
+            <div className="filter-bar" style={{ gap: '0.5rem', background: 'var(--bg-surface)', padding: '0.5rem', marginBottom: '1.5rem', display: 'flex' }}>
+              <button 
+                className={`btn ${financeiroTab === 'mensalidades' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                onClick={() => setFinanceiroTab('mensalidades')}
+              >
+                Faturamento Recorrente
+              </button>
+              <button 
+                className={`btn ${financeiroTab === 'planos' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                onClick={() => {
+                  setFinanceiroTab('planos');
+                  setIsCriandoPlano(false);
+                }}
+              >
+                Planos de Assinatura ({planos.length})
               </button>
             </div>
 
-            <div className="table-box">
-              <h3>Faturamento Recorrente (Baixa Manual)</h3>
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Valor</th>
-                      <th>Emissão</th>
-                      <th>Vencimento</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mensalidades.map(m => (
-                      <tr key={m._id}>
-                        <td>
-                          <div className="customer-cell">
-                            <div className={`customer-avatar ${getAvatarColor(m.clienteId?._id || '1')}`}>
-                              {getInitials(m.clienteId?.nome || 'N/A')}
+            {financeiroTab === 'mensalidades' ? (
+              <div className="table-box">
+                <h3>Mensalidades Pendentes/Pagas</h3>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Emissão</th>
+                        <th>Vencimento</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mensalidades.map(m => (
+                        <tr key={m._id}>
+                          <td>
+                            <div className="customer-cell">
+                              <div className={`customer-avatar ${getAvatarColor(m.clienteId?._id || '1')}`}>
+                                {getInitials(m.clienteId?.nome || 'N/A')}
+                              </div>
+                              <div className="customer-info">
+                                <span>{m.clienteId?.nome || 'Cliente Removido'}</span>
+                                <small>{m.clienteId?.whatsapp || 'N/A'}</small>
+                              </div>
                             </div>
-                            <div className="customer-info">
-                              <span>{m.clienteId?.nome || 'Cliente Removido'}</span>
-                              <small>{m.clienteId?.whatsapp || 'N/A'}</small>
+                          </td>
+                          <td><strong>R$ {m.valor.toFixed(2)}</strong></td>
+                          <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
+                          <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
+                          <td>
+                            <span className={`status-badge ${
+                              m.status === 'PAGO' ? 'active' :
+                              m.status === 'PENDENTE' ? 'pending' : 'inactive'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </td>
+                          <td>
+                            {m.status !== 'PAGO' && (
+                              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
+                                Confirmar Recebimento
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              /* --- SUB-ABA: PLANOS DE ASSINATURA --- */
+              <div>
+                {!isCriandoPlano ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <h3 style={{ margin: 0 }}>Planos Cadastrados</h3>
+                      <button className="btn btn-primary" onClick={() => setIsCriandoPlano(true)}>
+                        + Criar Novo Plano
+                      </button>
+                    </div>
+
+                    <div className="table-box">
+                      <div className="table-container">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Nome do Plano</th>
+                              <th>Tipo de Cobrança</th>
+                              <th>Periodicidade</th>
+                              <th>Valor / Faixas</th>
+                              <th>Fidelidade / Desc.</th>
+                              <th>Status</th>
+                              <th>Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {planos.map(p => (
+                              <tr key={p._id}>
+                                <td>
+                                  <strong>{p.nome}</strong>
+                                  {p.descricao && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{p.descricao}</div>}
+                                </td>
+                                <td>
+                                  <span className="badge badge-info">
+                                    {p.tipoCobranca === 'POR_VEICULO' ? 'Unitário por Veículo' : p.tipoCobranca === 'FIXO_GLOBAL' ? 'Fixo Global' : 'Escalonado Frota'}
+                                  </span>
+                                </td>
+                                <td><strong>{p.periodicidade}</strong></td>
+                                <td>
+                                  {p.tipoCobranca === 'ESCALONADO_FROTA' ? (
+                                    <div style={{ fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                      {p.faixasPreco.map((f, idx) => (
+                                        <div key={idx}>
+                                          {f.de} a {f.ate || '∞'} veículos: <strong>R$ {f.valor.toFixed(2)}/cada</strong>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <strong>R$ {p.valorBase.toFixed(2)}</strong>
+                                  )}
+                                </td>
+                                <td>
+                                  {p.fidelidadeMeses > 0 ? (
+                                    <span>{p.fidelidadeMeses} meses ({p.descontoFidelidadePct}% desc.)</span>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sem fidelidade</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <span className={`status-badge ${p.ativo ? 'active' : 'inactive'}`}>
+                                    {p.ativo ? 'Ativo' : 'Inativo'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button 
+                                    className="btn btn-secondary" 
+                                    style={{ padding: '0.3rem 0.60rem', fontSize: '0.75rem' }} 
+                                    onClick={() => handleTogglePlanoStatus(p._id, p.ativo)}
+                                  >
+                                    {p.ativo ? 'Desativar' : 'Ativar'}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {planos.length === 0 && (
+                              <tr>
+                                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                  Nenhum plano cadastrado no sistema.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* --- FORMULÁRIO DE CRIAÇÃO DE NOVO PLANO --- */
+                  <div style={{ maxWidth: '650px', margin: '0 auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <h3 style={{ margin: 0 }}>Cadastrar Plano de Cobrança</h3>
+                      <button className="btn btn-secondary" onClick={() => setIsCriandoPlano(false)}>
+                        Voltar
+                      </button>
+                    </div>
+
+                    <div className="card">
+                      <form onSubmit={handleAddPlano} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                        <div className="form-group">
+                          <label>Nome do Plano (Único)</label>
+                          <input 
+                            type="text" 
+                            placeholder="Ex: Plano Ouro Corporativo"
+                            value={newPlano.nome}
+                            onChange={e => setNewPlano({ ...newPlano, nome: e.target.value })}
+                            required
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div className="form-group">
+                            <label>Tipo de Cobrança</label>
+                            <select
+                              value={newPlano.tipoCobranca}
+                              onChange={e => setNewPlano({ ...newPlano, tipoCobranca: e.target.value as any })}
+                              required
+                            >
+                              <option value="POR_VEICULO">Unitário por Veículo</option>
+                              <option value="FIXO_GLOBAL">Fixo Global (Taxa única)</option>
+                              <option value="ESCALONADO_FROTA">Escalonado por Volume de Frota</option>
+                            </select>
+                          </div>
+
+                          <div className="form-group">
+                            <label>Periodicidade</label>
+                            <select
+                              value={newPlano.periodicidade}
+                              onChange={e => setNewPlano({ ...newPlano, periodicidade: e.target.value as any })}
+                              required
+                            >
+                              <option value="MENSAL">Mensal</option>
+                              <option value="BIMESTRAL">Bimestral</option>
+                              <option value="TRIMESTRAL">Trimestral</option>
+                              <option value="SEMESTRAL">Semestral</option>
+                              <option value="ANUAL">Anual</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {(newPlano.tipoCobranca as string) !== 'ESCALONADO_FROTA' ? (
+                          <div className="form-group">
+                            <label>Valor Base (R$)</label>
+                            <input 
+                              type="number" 
+                              placeholder="Ex: 85.00"
+                              value={newPlano.valorBase}
+                              onChange={e => setNewPlano({ ...newPlano, valorBase: e.target.value })}
+                              required={(newPlano.tipoCobranca as string) !== 'ESCALONADO_FROTA'}
+                            />
+                          </div>
+                        ) : (
+                          /* --- CRIADOR DINÂMICO DE FAIXAS DE PREÇO --- */
+                          <div className="form-group" style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', background: '#121316' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <label style={{ margin: 0, fontWeight: 'bold' }}>Faixas de Preço por Frota</label>
+                              <button 
+                                type="button" 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', width: 'auto' }}
+                                onClick={() => {
+                                  const last = faixasPreco[faixasPreco.length - 1];
+                                  const nextDe = last ? (last.ate || last.de) + 1 : 1;
+                                  setFaixasPreco([...faixasPreco, { de: nextDe, ate: undefined, valor: 80 }]);
+                                }}
+                              >
+                                + Adicionar Faixa
+                              </button>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {faixasPreco.map((f, idx) => (
+                                <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mín:</span>
+                                  <input 
+                                    type="number" 
+                                    style={{ padding: '0.35rem', fontSize: '0.8rem', width: '70px' }}
+                                    value={f.de} 
+                                    onChange={e => {
+                                      const updated = faixasPreco.map((fp, i) => i === idx ? { ...fp, de: Number(e.target.value) } : fp);
+                                      setFaixasPreco(updated);
+                                    }}
+                                    required
+                                  />
+
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Máx:</span>
+                                  <input 
+                                    type="number" 
+                                    style={{ padding: '0.35rem', fontSize: '0.8rem', width: '70px' }}
+                                    value={f.ate || ''} 
+                                    placeholder="∞"
+                                    onChange={e => {
+                                      const updated = faixasPreco.map((fp, i) => i === idx ? { ...fp, ate: e.target.value === '' ? undefined : Number(e.target.value) } : fp);
+                                      setFaixasPreco(updated);
+                                    }}
+                                  />
+
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>R$/Veíc:</span>
+                                  <input 
+                                    type="number" 
+                                    style={{ padding: '0.35rem', fontSize: '0.8rem', width: '90px' }}
+                                    value={f.valor} 
+                                    onChange={e => {
+                                      const updated = faixasPreco.map((fp, i) => i === idx ? { ...fp, valor: Number(e.target.value) } : fp);
+                                      setFaixasPreco(updated);
+                                    }}
+                                    required
+                                  />
+
+                                  {faixasPreco.length > 1 && (
+                                    <button 
+                                      type="button" 
+                                      className="btn btn-secondary" 
+                                      style={{ padding: '0.35rem', color: 'var(--primary)', width: 'auto' }}
+                                      onClick={() => {
+                                        const updated = faixasPreco.filter((_, i) => i !== idx);
+                                        setFaixasPreco(updated);
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        </td>
-                        <td><strong>R$ {m.valor.toFixed(2)}</strong></td>
-                        <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
-                        <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
-                        <td>
-                          <span className={`status-badge ${
-                            m.status === 'PAGO' ? 'active' :
-                            m.status === 'PENDENTE' ? 'pending' : 'inactive'
-                          }`}>
-                            {m.status}
-                          </span>
-                        </td>
-                        <td>
-                          {m.status !== 'PAGO' && (
-                            <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
-                              Confirmar Recebimento
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div className="form-group">
+                            <label>Fidelidade (Meses)</label>
+                            <select
+                              value={newPlano.fidelidadeMeses}
+                              onChange={e => setNewPlano({ ...newPlano, fidelidadeMeses: e.target.value })}
+                            >
+                              <option value="0">Sem fidelidade</option>
+                              <option value="6">6 meses</option>
+                              <option value="12">12 meses</option>
+                              <option value="24">24 meses</option>
+                            </select>
+                          </div>
+
+                          <div className="form-group">
+                            <label>Desconto por Fidelidade (%)</label>
+                            <input 
+                              type="number" 
+                              placeholder="Ex: 10"
+                              value={newPlano.descontoFidelidadePct}
+                              onChange={e => setNewPlano({ ...newPlano, descontoFidelidadePct: e.target.value })}
+                              min="0"
+                              max="100"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Descrição do Plano</label>
+                          <textarea 
+                            placeholder="Benefícios ou regras do plano..."
+                            value={newPlano.descricao}
+                            onChange={e => setNewPlano({ ...newPlano, descricao: e.target.value })}
+                            style={{ height: '70px' }}
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                          <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setIsCriandoPlano(false)}>
+                            Cancelar
+                          </button>
+                          <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                            Salvar Plano
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
         )}
 

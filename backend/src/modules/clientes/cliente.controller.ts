@@ -3,10 +3,11 @@ import { Cliente } from './cliente.model';
 import { Veiculo } from '../veiculos/veiculo.model';
 import { HistoricoInstalacao } from '../historico/historico.model';
 import { Mensalidade } from '../financeiro/mensalidade.model';
+import { Plano } from '../planos/plano.model';
 
 export const createCliente = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nome, documento, email, whatsapp, endereco } = req.body;
+    const { nome, documento, email, whatsapp, endereco, planoId, diaVencimento } = req.body;
 
     if (!nome || !documento) {
       res.status(400).json({ error: 'Nome e Documento (CPF/CNPJ) são obrigatórios.' });
@@ -25,7 +26,9 @@ export const createCliente = async (req: Request, res: Response): Promise<void> 
       documento,
       email,
       whatsapp,
-      endereco
+      endereco: endereco || {},
+      planoId: planoId || null,
+      diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : 10
     });
 
     await novoCliente.save();
@@ -54,7 +57,7 @@ export const listClientes = async (req: Request, res: Response): Promise<void> =
       ];
     }
 
-    const clientes = await Cliente.find(query).sort({ nome: 1 }).lean();
+    const clientes = await Cliente.find(query).populate('planoId').sort({ nome: 1 }).lean();
     
     // Contabilizar veículos ativos por cliente de forma assíncrona paralela
     const clientesComCount = await Promise.all(
@@ -163,7 +166,7 @@ export const getClientePanorama = async (req: Request, res: Response): Promise<v
   try {
     const { id } = req.params;
 
-    const cliente = await Cliente.findById(id).lean();
+    const cliente = await Cliente.findById(id).populate('planoId').lean();
     if (!cliente) {
       res.status(404).json({ error: 'Cliente não encontrado.' });
       return;
