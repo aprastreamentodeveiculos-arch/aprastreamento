@@ -144,18 +144,12 @@ export const approveOrdem = async (req: Request, res: Response): Promise<void> =
       { session: session ? session : undefined }
     );
 
-    // 3. Mudar status do Chip para INSTALADO
-    await Equipamento.findByIdAndUpdate(
-      ordem.chipId,
-      { status: 'INSTALADO', tecnicoResponsavelId: ordem.tecnicoId },
-      { session: session ? session : undefined }
-    );
+
 
     // 4. Registrar na tabela de histórico de instalação
     const historico = new HistoricoInstalacao({
       veiculoId: ordem.veiculoId,
       rastreadorId: ordem.rastreadorId,
-      chipId: ordem.chipId,
       tecnicoId: ordem.tecnicoId,
       dataInstalacao: new Date()
     });
