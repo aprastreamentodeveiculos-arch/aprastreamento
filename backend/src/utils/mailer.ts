@@ -5,11 +5,16 @@ dotenv.config();
 
 // Configuração do transporter do Nodemailer usando variáveis de ambiente
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Pode ser alterado conforme o provedor do cliente
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // Usa STARTTLS, mais recomendado para contornar bloqueios em nuvem
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Recomenda-se usar "Senha de Aplicativo" do Gmail
+    pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false // Evita alguns erros de certificado em ambientes hosteados
+  }
 });
 
 /**
