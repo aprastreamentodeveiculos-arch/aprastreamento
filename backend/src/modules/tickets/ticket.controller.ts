@@ -30,26 +30,8 @@ export const createTicket = async (req: Request, res: Response): Promise<void> =
 
     await novoTicket.save();
 
-    // Envio real de e-mail via Nodemailer
-    const subject = `[AP RASTRO] Novo Chamado Registrado - ${ticketId}`;
-    const text = `
-Olá, Equipe Técnica da AP RASTRO,
-
-Um novo chamado de suporte foi aberto e exige atenção:
-
-• ID do Chamado:  ${ticketId}
-• Solicitante:   ${usuarioNome} (${usuarioRole === 'admin' ? 'Administrador' : 'Técnico Instalador'})
-• Tela/Origem:   ${pagina}
-• Categoria:     ${tipoErro}
-• Descrição:
-  "${descricao}"
-
-• Data de Abertura: ${new Date().toLocaleString('pt-BR')}
-
-Por favor, acesse o painel para maiores detalhes.
-    `;
-
-    await sendEmail(destinatario, subject, text);
+    // O e-mail automático via API foi desativado. 
+    // O envio de e-mail agora é acionado pelo frontend (via mailto:).
 
     res.status(201).json(novoTicket);
   } catch (error: any) {
