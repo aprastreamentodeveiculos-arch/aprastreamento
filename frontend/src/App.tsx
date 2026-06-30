@@ -58,7 +58,16 @@ function App() {
       // Redireciona para o cliente de e-mail do usuário (Outlook/Gmail) preenchido
       const subject = encodeURIComponent(`[AP RASTRO] Novo Chamado Registrado - ${ticket.ticketId || ticket._id}`);
       const body = encodeURIComponent(`Olá, Equipe Técnica da AP RASTRO,\n\nUm novo chamado de suporte foi aberto e exige atenção:\n\n• ID do Chamado: ${ticket.ticketId || ticket._id}\n• Solicitante: ${userName}\n• Tela/Origem: ${supportForm.pagina}\n• Categoria: ${supportForm.tipoErro}\n• Descrição:\n"${supportForm.descricao}"\n\nPor favor, acesse o painel para maiores detalhes.`);
-      window.location.href = `mailto:ANDREWLAMEIRA30@GMAIL.COM?subject=${subject}&body=${body}`;
+      
+      const mailtoUrl = `mailto:ANDREWLAMEIRA30@GMAIL.COM?subject=${subject}&body=${body}`;
+      
+      // Cria um elemento <a> temporário para simular o clique (evita bloqueio de popup)
+      const link = document.createElement('a');
+      link.href = mailtoUrl;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       setSupportForm({ pagina: 'Dashboard', tipoErro: 'Bug na Interface', descricao: '' });
     } catch (err: any) {
