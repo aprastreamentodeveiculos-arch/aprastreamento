@@ -31,6 +31,7 @@ function App() {
   const [supportForm, setSupportForm] = useState({ pagina: 'Dashboard', tipoErro: 'Bug na Interface', descricao: '' });
   const [supportSending, setSupportSending] = useState<boolean>(false);
   const [supportSuccessTicketId, setSupportSuccessTicketId] = useState<string | null>(null);
+  const [supportMailtoUrl, setSupportMailtoUrl] = useState<string>('');
   const [supportError, setSupportError] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
@@ -60,14 +61,17 @@ function App() {
       const body = encodeURIComponent(`Olá, Equipe Técnica da AP RASTRO,\n\nUm novo chamado de suporte foi aberto e exige atenção:\n\n• ID do Chamado: ${ticket.ticketId || ticket._id}\n• Solicitante: ${userName}\n• Tela/Origem: ${supportForm.pagina}\n• Categoria: ${supportForm.tipoErro}\n• Descrição:\n"${supportForm.descricao}"\n\nPor favor, acesse o painel para maiores detalhes.`);
       
       const mailtoUrl = `mailto:ANDREWLAMEIRA30@GMAIL.COM?subject=${subject}&body=${body}`;
+      setSupportMailtoUrl(mailtoUrl);
       
-      // Cria um elemento <a> temporário para simular o clique (evita bloqueio de popup)
-      const link = document.createElement('a');
-      link.href = mailtoUrl;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Cria um elemento <a> temporário para tentar abrir direto
+      try {
+        const link = document.createElement('a');
+        link.href = mailtoUrl;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {}
 
       setSupportForm({ pagina: 'Dashboard', tipoErro: 'Bug na Interface', descricao: '' });
     } catch (err: any) {
@@ -2805,14 +2809,21 @@ function App() {
                   {supportSuccessTicketId ? (
                     <div className="support-success-box">
                       <div className="success-icon">✓</div>
-                      <h4>Chamado de Suporte Aberto!</h4>
+                      <h4>Chamado Registrado!</h4>
                       <p className="ticket-id-tag">ID do Ticket: <strong>{supportSuccessTicketId}</strong></p>
                       <p>
-                        Seu problema foi registrado no banco de dados e uma notificação de e-mail estruturada foi enviada para <strong>ANDREWLAMEIRA30@GMAIL.COM</strong>.
+                        Seu problema foi salvo no banco. Para notificar o suporte por e-mail, clique no botão abaixo.
                       </p>
-                      <button className="btn btn-secondary" onClick={() => setSupportSuccessTicketId(null)}>
-                        Abrir Outro Chamado
-                      </button>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+                        <a href={supportMailtoUrl} className="btn btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }} target="_blank" rel="noopener noreferrer">
+                          ✉️ Abrir Aplicativo de E-mail
+                        </a>
+                        
+                        <button className="btn btn-secondary" onClick={() => setSupportSuccessTicketId(null)}>
+                          Fechar / Novo Chamado
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <form onSubmit={handleSendTicket} className="support-form">
