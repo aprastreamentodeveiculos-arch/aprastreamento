@@ -7,10 +7,10 @@ import mongoose from 'mongoose';
 
 export const createOrdem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tecnicoId, clienteId, placa, marca, modelo, cor, ano, chassi, renavam, rastreadorId, chipId, observacoes } = req.body;
+    const { tecnicoId, clienteId, placa, marca, modelo, cor, ano, chassi, renavam, rastreadorId, observacoes } = req.body;
 
-    if (!tecnicoId || !clienteId || !placa || !rastreadorId || !chipId) {
-      res.status(400).json({ error: 'Dados obrigatórios ausentes (tecnicoId, clienteId, placa, rastreadorId, chipId).' });
+    if (!tecnicoId || !clienteId || !placa || !rastreadorId) {
+      res.status(400).json({ error: 'Dados obrigatórios ausentes (tecnicoId, clienteId, placa, rastreadorId).' });
       return;
     }
 
@@ -43,7 +43,6 @@ export const createOrdem = async (req: Request, res: Response): Promise<void> =>
       tecnicoId,
       veiculoId: veiculo._id,
       rastreadorId,
-      chipId,
       observacoes,
       status: req.body.status || 'PENDENTE',
       fotosUrls: req.body.fotosUrls || [] // URLs simbólicos enviados pelo frontend
@@ -54,10 +53,6 @@ export const createOrdem = async (req: Request, res: Response): Promise<void> =>
     // Se o status da O.S. for 'AGENDADA', atualiza o estoque/posse dos equipamentos selecionados
     if (novaOrdem.status === 'AGENDADA') {
       await Equipamento.findByIdAndUpdate(rastreadorId, {
-        status: 'COM_TECNICO',
-        tecnicoResponsavelId: tecnicoId
-      });
-      await Equipamento.findByIdAndUpdate(chipId, {
         status: 'COM_TECNICO',
         tecnicoResponsavelId: tecnicoId
       });
@@ -88,7 +83,7 @@ export const listOrdens = async (req: Request, res: Response): Promise<void> => 
         }
       })
       .populate('rastreadorId', 'identificador')
-      .populate('chipId', 'identificador')
+
       .sort({ createdAt: -1 });
 
     res.status(200).json(ordens);
