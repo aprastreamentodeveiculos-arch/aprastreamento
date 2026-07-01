@@ -84,6 +84,8 @@ function App() {
 
   // Estados reais integrados à API (MongoDB)
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientesInativos, setClientesInativos] = useState<Cliente[]>([]);
+  const [mostrarInativos, setMostrarInativos] = useState<boolean>(false);
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
@@ -499,6 +501,31 @@ function App() {
     } catch (err: any) {
       alert('Erro ao agendar O.S.: ' + err.message);
     }
+  };
+
+  const handleInativarCliente = async (clienteId: string) => {
+    if (!window.confirm('Tem certeza que deseja INATIVAR este cliente? Ele parará de gerar novas mensalidades e será removido das métricas principais da empresa.')) return;
+    try {
+      await api.clientes.delete(clienteId);
+      alert('Cliente inativado com sucesso.');
+      setSelectedClientePanorama(null);
+      setCurrentPage('clientes');
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao inativar cliente: ' + err.message);
+    }
+  };
+
+  const handleToggleInativos = async () => {
+    if (!mostrarInativos) {
+      try {
+        const inativos = await api.clientes.list({ ativo: 'false' });
+        setClientesInativos(inativos);
+      } catch (err) {
+        console.error('Erro ao buscar inativos', err);
+      }
+    }
+    setMostrarInativos(!mostrarInativos);
   };
 
   const handleAbrirFichaCliente = async (clienteId: string) => {
@@ -1039,8 +1066,27 @@ function App() {
             </div>
 
             <div className="table-box">
-              <h3>Frotas Ativas</h3>
-              <div className="table-container" style={{ marginTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3>{mostrarInativos ? 'Frotas Inativas (Desligadas)' : 'Frotas Ativas'}</h3>
+                <div className="filter-tabs">
+                  <button 
+                    className={`btn ${!mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
+                    onClick={() => mostrarInativos && handleToggleInativos()}
+                    style={{ padding: '0.4rem 1rem', borderRadius: '4px 0 0 4px', borderRight: 'none' }}
+                  >
+                    Ativos ({clientes.length})
+                  </button>
+                  <button 
+                    className={`btn ${mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
+                    onClick={() => !mostrarInativos && handleToggleInativos()}
+                    style={{ padding: '0.4rem 1rem', borderRadius: '0 4px 4px 0' }}
+                  >
+                    Inativos
+                  </button>
+                </div>
+              </div>
+
+              <div className="table-container">
                 <table>
                   <thead>
                     <tr>
@@ -1053,7 +1099,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {clientes.map(c => (
+                    {(mostrarInativos ? clientesInativos : clientes).map(c => (
                       <tr key={c._id}>
                         <td>
                           <div className="customer-cell" style={{ cursor: 'pointer' }} onClick={() => handleAbrirFichaCliente(c._id)}>
@@ -1194,9 +1240,18 @@ function App() {
                   ❓
                 </button>
               </div>
-              <button className="btn btn-secondary" onClick={() => setCurrentPage('clientes')}>
-                Voltar
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  className="btn" 
+                  style={{ background: 'var(--danger)', color: '#fff', border: 'none' }} 
+                  onClick={() => handleInativarCliente(selectedClientePanorama.cliente._id)}
+                >
+                  Inativar Cliente
+                </button>
+                <button className="btn btn-secondary" onClick={() => setCurrentPage('clientes')}>
+                  Voltar
+                </button>
+              </div>
             </div>
 
             {/* Cabeçalho da Ficha com Informações Cadastrais */}

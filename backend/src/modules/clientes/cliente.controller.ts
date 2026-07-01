@@ -77,8 +77,10 @@ export const listClientes = async (req: Request, res: Response): Promise<void> =
     const query: any = {};
 
     // Filtro de ativos/inativos
-    if (ativo !== undefined) {
-      query.ativo = ativo === 'true';
+    if (ativo === 'false') {
+      query.ativo = false;
+    } else if (ativo !== 'todos') {
+      query.ativo = true; // Por padrão, busca apenas os ativos
     }
 
     // Busca textual simplificada por nome ou documento

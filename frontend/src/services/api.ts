@@ -172,7 +172,10 @@ export const api = {
 
   // Clientes
   clientes: {
-    list: (): Promise<Cliente[]> => request('/clientes'),
+    list: (filtros?: { ativo?: string }): Promise<Cliente[]> => {
+      const query = filtros?.ativo ? `?ativo=${filtros.ativo}` : '';
+      return request(`/clientes${query}`);
+    },
     create: (data: Partial<Cliente> & { veiculos?: any[] }): Promise<Cliente> => 
       request('/clientes', { method: 'POST', body: JSON.stringify(data) }),
     panorama: (id: string): Promise<{
@@ -180,7 +183,9 @@ export const api = {
       veiculos: any[];
       mensalidades: Mensalidade[];
       historico: any[];
-    }> => request(`/clientes/${id}/panorama`)
+    }> => request(`/clientes/${id}/panorama`),
+    delete: (id: string): Promise<any> => 
+      request(`/clientes/${id}`, { method: 'DELETE' })
   },
 
   // Técnicos
