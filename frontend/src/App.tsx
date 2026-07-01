@@ -1225,99 +1225,104 @@ function App() {
 
             {/* CONTEÚDO DA ABA: VEÍCULOS (FROTA) */}
             {fichaTab === 'veiculos' && (
-              <p style={{ color: '#555', marginBottom: '0.5rem' }}>🚗 Use o botão + para cadastrar veículos rapidamente.</p>
-              <div className="table-box">
-                <h3>Veículos Cadastrados</h3>
-                <div className="table-container" style={{ marginTop: '1rem' }}>
-                  {selectedClientePanorama.veiculos.length === 0 ? (
-                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhum veículo registrado na frota.</p>
-                  ) : (
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Placa</th>
-                          <th>Marca / Modelo</th>
-                          <th>Cor / Ano</th>
-                          <th>Rastreador Instalado (IMEI)</th>
-                          <th>Chip M2M (ICCID)</th>
-                          <th>Status da Instalação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedClientePanorama.veiculos.map((v: any) => {
-                          const instalacaoAtiva = selectedClientePanorama.historico.find((h: any) => 
-                            (typeof h.veiculoId === 'string' ? h.veiculoId === v._id : h.veiculoId?._id === v._id) && 
-                            !h.dataDesinstalacao
-                          );
+              <>
+                <p style={{ color: '#555', marginBottom: '0.5rem' }}>🚗 Use o botão + para cadastrar veículos rapidamente.</p>
+                <div className="table-box">
+                  <h3>Veículos Cadastrados</h3>
+                  <div className="table-container" style={{ marginTop: '1rem' }}>
+                    {selectedClientePanorama.veiculos.length === 0 ? (
+                      <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhum veículo registrado na frota.</p>
+                    ) : (
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Placa</th>
+                            <th>Marca / Modelo</th>
+                            <th>Cor / Ano</th>
+                            <th>Rastreador Instalado (IMEI)</th>
+                            <th>Chip M2M (ICCID)</th>
+                            <th>Status da Instalação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedClientePanorama.veiculos.map((v: any) => {
+                            const instalacaoAtiva = selectedClientePanorama.historico.find((h: any) => 
+                              (typeof h.veiculoId === 'string' ? h.veiculoId === v._id : h.veiculoId?._id === v._id) && 
+                              !h.dataDesinstalacao
+                            );
 
-                          return (
-                            <tr key={v._id}>
-                              <td><strong>{v.placa}</strong></td>
-                              <td>{v.marca || 'N/A'} - {v.modelo || 'N/A'}</td>
-                              <td>{v.cor || 'N/A'} / {v.ano || 'N/A'}</td>
-                              <td>{instalacaoAtiva?.rastreadorId?.identificador || 'N/A'}</td>
-                              <td>{instalacaoAtiva?.rastreadorId?.iccid || 'N/A'}</td>
-                              <td>
-                                <span className={`status-badge ${instalacaoAtiva ? 'active' : 'inactive'}`}>
-                                  {instalacaoAtiva ? 'INSTALADO & ATIVO' : 'SEM DISPOSITIVO'}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
+                            return (
+                              <tr key={v._id}>
+                                <td><strong>{v.placa}</strong></td>
+                                <td>{v.marca || 'N/A'} - {v.modelo || 'N/A'}</td>
+                                <td>{v.cor || 'N/A'} / {v.ano || 'N/A'}</td>
+                                <td>{instalacaoAtiva?.rastreadorId?.identificador || 'N/A'}</td>
+                                <td>{instalacaoAtiva?.rastreadorId?.iccid || 'N/A'}</td>
+                                <td>
+                                  <span className={`status-badge ${instalacaoAtiva ? 'active' : 'inactive'}`}>
+                                    {instalacaoAtiva ? 'INSTALADO & ATIVO' : 'SEM DISPOSITIVO'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* CONTEÚDO DA ABA: HISTÓRICO DE AUDITORIA */}
             {fichaTab === 'historico' && (
-              <p style={{ color: '#555', marginBottom: '0.5rem' }}>📜 Use o botão + para registrar um novo evento.</p>
-              <div className="card">
-                <h3>Linha do Tempo de Rastreabilidade</h3>
-                <div style={{ marginTop: '1rem' }}>
-                  {selectedClientePanorama.historico.length === 0 ? (
-                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhum histórico de movimentação encontrado.</p>
-                  ) : (
-                    <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {selectedClientePanorama.historico.map((h: any) => (
-                        <li key={h._id} className="card" style={{ background: 'var(--bg-deep)', borderLeft: '4px solid var(--primary)', padding: '1rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <strong>Instalação Homologada</strong>
-                            <small style={{ color: 'var(--text-muted)' }}>{new Date(h.dataInstalacao).toLocaleDateString('pt-BR')}</small>
-                          </div>
-                          <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
-                            Veículo: <strong>{h.veiculoId?.placa || 'N/A'}</strong>
-                          </p>
-                          <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
-                            Técnico Responsável: <strong>{h.tecnicoId?.nome || 'N/A'}</strong>
-                          </p>
-                          <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
-                            Rastreador IMEI: <strong>{h.rastreadorId?.identificador} ({h.rastreadorId?.marca} {h.rastreadorId?.modelo})</strong>
-                          </p>
-                          {h.observacao && (
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                              Nota: {h.observacao}
+              <>
+                <p style={{ color: '#555', marginBottom: '0.5rem' }}>📜 Use o botão + para registrar um novo evento.</p>
+                <div className="card">
+                  <h3>Linha do Tempo de Rastreabilidade</h3>
+                  <div style={{ marginTop: '1rem' }}>
+                    {selectedClientePanorama.historico.length === 0 ? (
+                      <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhum histórico de movimentação encontrado.</p>
+                    ) : (
+                      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {selectedClientePanorama.historico.map((h: any) => (
+                          <li key={h._id} className="card" style={{ background: 'var(--bg-deep)', borderLeft: '4px solid var(--primary)', padding: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                              <strong>Instalação Homologada</strong>
+                              <small style={{ color: 'var(--text-muted)' }}>{new Date(h.dataInstalacao).toLocaleDateString('pt-BR')}</small>
+                            </div>
+                            <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
+                              Veículo: <strong>{h.veiculoId?.placa || 'N/A'}</strong>
                             </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                            <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
+                              Técnico Responsável: <strong>{h.tecnicoId?.nome || 'N/A'}</strong>
+                            </p>
+                            <p style={{ fontSize: '0.85rem', margin: '0.15rem 0' }}>
+                              Rastreador IMEI: <strong>{h.rastreadorId?.identificador} ({h.rastreadorId?.marca} {h.rastreadorId?.modelo})</strong>
+                            </p>
+                            {h.observacao && (
+                              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                                Nota: {h.observacao}
+                              </p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* CONTEÚDO DA ABA: FINANCEIRO (MENSALIDADES) */}
             {fichaTab === 'financeiro' && (
-              <p style={{ color: '#555', marginBottom: '0.5rem' }}>💰 Use o botão + para adicionar uma mensalidade.</p>
-              <div className="table-box">
-                <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
-                <div className="table-container" style={{ marginTop: '1rem' }}>
-                  {selectedClientePanorama.mensalidades.length === 0 ? (
-                    <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhuma fatura gerada para este cliente.</p>
+              <>
+                <p style={{ color: '#555', marginBottom: '0.5rem' }}>💰 Use o botão + para adicionar uma mensalidade.</p>
+                <div className="table-box">
+                  <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
+                  <div className="table-container" style={{ marginTop: '1rem' }}>
+                    {selectedClientePanorama.mensalidades.length === 0 ? (
+                      <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhuma fatura gerada para este cliente.</p>
                   ) : (
                     <table>
                       <thead>
@@ -1361,6 +1366,7 @@ function App() {
                   )}
                 </div>
               </div>
+              </>
             )}
           </div>
         )}
