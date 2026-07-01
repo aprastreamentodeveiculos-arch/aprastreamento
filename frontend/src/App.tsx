@@ -111,6 +111,10 @@ function App() {
   const [selectedClientePanorama, setSelectedClientePanorama] = useState<any>(null);
   const [fichaTab, setFichaTab] = useState<'veiculos' | 'historico' | 'financeiro'>('veiculos');
   const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+  
+  // Cadastro de Frota em Massa
+  const [isAddingFrota, setIsAddingFrota] = useState<boolean>(false);
+  const [frotaRows, setFrotaRows] = useState([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
 
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
@@ -433,6 +437,34 @@ function App() {
       setCurrentPage('tecnico-caixa');
     } catch (err: any) {
       alert('Erro ao enviar O.S.: ' + err.message);
+    }
+  };
+
+  const handleSalvarFrota = async () => {
+    if (!selectedClientePanorama) return;
+    
+    // Filtra apenas linhas que tenham a placa preenchida (obrigatório)
+    const veiculosValidos = frotaRows.filter(r => r.placa.trim() !== '');
+    if (veiculosValidos.length === 0) {
+      alert('Preencha ao menos a placa de um veículo.');
+      return;
+    }
+
+    try {
+      await api.veiculos.bulkCreate({
+        clienteId: selectedClientePanorama.cliente._id,
+        veiculos: veiculosValidos
+      });
+      alert('Frota cadastrada com sucesso!');
+      setIsAddingFrota(false);
+      setFrotaRows([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
+      
+      // Recarrega a ficha do cliente
+      const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
+      setSelectedClientePanorama(panorama);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao salvar frota: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -1238,16 +1270,112 @@ function App() {
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <p style={{ color: '#555', margin: 0 }}>🚗 Gerencie a frota ativa deste cliente.</p>
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => {
-                      setNewOS({ ...newOS, clienteId: selectedClientePanorama.cliente._id });
-                      setCurrentPage('ordens');
-                    }}
-                  >
-                    + Nova Instalação de Veículo
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => setIsAddingFrota(!isAddingFrota)}
+                    >
+                      {isAddingFrota ? 'Cancelar Cadastro' : '+ Cadastro Rápido (Frota)'}
+                    </button>
+                    <button 
+                      className="btn btn-primary" 
+                      onClick={() => {
+                        setNewOS({ ...newOS, clienteId: selectedClientePanorama.cliente._id });
+                        setCurrentPage('ordens');
+                      }}
+                    >
+                      + Nova Instalação (O.S.)
+                    </button>
+                  </div>
                 </div>
+
+                {isAddingFrota && (
+                  <div className="card" style={{ marginBottom: '1.5rem', border: '1px solid var(--primary)', backgroundColor: 'rgba(255, 60, 60, 0.05)' }}>
+                    <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>Cadastro Rápido de Frota em Lote</h3>
+                    <p style={{ fontSize: '0.85rem', marginBottom: '1rem', color: 'var(--text-muted)' }}>
+                      Preencha os dados dos veículos abaixo. Ao salvar, os veículos serão criados e atrelados a este cliente. 
+                      Se um IMEI for informado, o equipamento será ativado automaticamente sem passar pelo processo de Ordem de Serviço.
+                    </p>
+                    <div className="table-container">
+                      <table style={{ width: '100%', marginBottom: '1rem' }}>
+                        <thead>
+                          <tr>
+                            <th>Placa *</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Cor</th>
+                            <th>Ano</th>
+                            <th>IMEI (Rastreador)</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {frotaRows.map((row, index) => (
+                            <tr key={index}>
+                              <td>
+                                <input type="text" className="input" placeholder="ABC-1234" value={row.placa} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].placa = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <input type="text" className="input" placeholder="Chevrolet" value={row.marca} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].marca = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <input type="text" className="input" placeholder="Onix" value={row.modelo} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].modelo = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <input type="text" className="input" placeholder="Branco" value={row.cor} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].cor = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <input type="text" className="input" placeholder="2021" value={row.ano} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].ano = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <input type="text" className="input" placeholder="IMEI 15 dígitos" value={row.imei} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].imei = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
+                                <button className="btn btn-secondary" style={{ padding: '0.4rem' }} onClick={() => {
+                                  const newRows = frotaRows.filter((_, i) => i !== index);
+                                  setFrotaRows(newRows.length ? newRows : [{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
+                                }}>🗑️</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <button className="btn btn-secondary" onClick={() => setFrotaRows([...frotaRows, { placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }])}>
+                        + Adicionar Linha
+                      </button>
+                      <button className="btn btn-primary" onClick={handleSalvarFrota}>
+                        Salvar Frota ({frotaRows.filter(r => r.placa).length} veículos)
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="table-box">
                   <h3>Veículos Cadastrados</h3>
                   <div className="table-container" style={{ marginTop: '1rem' }}>

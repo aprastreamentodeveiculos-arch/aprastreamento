@@ -198,6 +198,12 @@ export const api = {
       })
   },
 
+  // Veículos
+  veiculos: {
+    bulkCreate: (data: { clienteId: string, veiculos: any[] }) =>
+      request('/veiculos/bulk', { method: 'POST', body: JSON.stringify(data) })
+  },
+
   // Ordens de Serviço
   ordens: {
     list: (filtros?: { status?: string; tecnicoId?: string }): Promise<OrdemServico[]> => {

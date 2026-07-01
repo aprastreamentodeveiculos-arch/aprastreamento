@@ -12,7 +12,7 @@ import seedRoutes from './modules/seed/seed.routes';
 import uploadRoutes from './modules/upload/upload.routes';
 import ticketRoutes from './modules/tickets/ticket.routes';
 import planoRoutes from './modules/planos/plano.routes';
-
+import veiculoRoutes from './modules/veiculos/veiculo.routes';
 
 const app: Application = express();
 
@@ -62,7 +62,7 @@ app.use('/api/seed', seedRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/planos', planoRoutes);
-
+app.use('/api/veiculos', veiculoRoutes);
 
 // Rota de Health-Check simples
 app.get('/api/health', (req: Request, res: Response) => {
