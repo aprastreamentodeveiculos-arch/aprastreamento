@@ -464,7 +464,12 @@ function App() {
       setSelectedClientePanorama(panorama);
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao salvar frota: ' + (err.response?.data?.message || err.message));
+      const data = err.response?.data;
+      let msg = data?.message || err.message;
+      if (data?.imeisInvalidos?.length > 0) {
+        msg += '\n\nIMEIs não encontrados no estoque:\n- ' + data.imeisInvalidos.join('\n- ');
+      }
+      alert('Erro ao salvar frota:\n' + msg);
     }
   };
 

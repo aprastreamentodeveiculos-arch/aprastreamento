@@ -18,6 +18,22 @@ export const bulkCreate = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Cliente não encontrado' });
     }
 
+    // Validação prévia de IMEIs informados
+    const imeisInformados = veiculos.map((v: any) => v.imei).filter((imei: string) => imei && imei.trim() !== '');
+    if (imeisInformados.length > 0) {
+      const equipamentosExistentes = await Equipamento.find({ identificador: { $in: imeisInformados } });
+      const imeisExistentes = equipamentosExistentes.map(e => e.identificador);
+      
+      const imeisNaoEncontrados = imeisInformados.filter((imei: string) => !imeisExistentes.includes(imei));
+      
+      if (imeisNaoEncontrados.length > 0) {
+        return res.status(400).json({ 
+          message: 'Os seguintes rastreadores (IMEI) não existem no estoque. Cadastre-os primeiro!', 
+          imeisInvalidos: imeisNaoEncontrados 
+        });
+      }
+    }
+
     // Busca ou cria o Técnico "SISTEMA MIGRAÇÃO"
     let tecnicoSistema = await Tecnico.findOne({ nome: 'SISTEMA MIGRAÇÃO' });
     if (!tecnicoSistema) {
@@ -50,14 +66,8 @@ export const bulkCreate = async (req: Request, res: Response) => {
       // 2. Trata o Rastreador (Equipamento) se um IMEI for fornecido
       if (imei) {
         let equipamento = await Equipamento.findOne({ identificador: imei });
-        if (!equipamento) {
-          // Cria o equipamento automaticamente se não existir
-          equipamento = await Equipamento.create({
-            identificador: imei,
-            status: 'INSTALADO'
-          });
-        } else {
-          // Se já existir, apenas atualiza o status para INSTALADO
+        if (equipamento) {
+          // Atualiza o status para INSTALADO
           equipamento.status = 'INSTALADO';
           await equipamento.save();
         }
