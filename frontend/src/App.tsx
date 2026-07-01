@@ -110,7 +110,7 @@ function App() {
 
   const [selectedClientePanorama, setSelectedClientePanorama] = useState<any>(null);
   const [fichaTab, setFichaTab] = useState<'veiculos' | 'historico' | 'financeiro'>('veiculos');
-
+  const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
 
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
@@ -1143,9 +1143,19 @@ function App() {
         )}
         {/* --- PÁGINA: FICHA DO CLIENTE (Panorama Consolidado) --- */}
         {currentPage === 'clientes-ficha' && selectedClientePanorama && (
-          <div>
-            <div className="view-header">
-              <h1>Ficha do Cliente - {selectedClientePanorama.cliente.nome}</h1>
+          <div className="section-container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h1>Ficha do Cliente - {selectedClientePanorama.cliente.nome}</h1>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ borderRadius: '50%', width: '35px', height: '35px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Ajuda e Atalhos"
+                  onClick={() => setShowHelpModal(true)}
+                >
+                  ❓
+                </button>
+              </div>
               <button className="btn btn-secondary" onClick={() => setCurrentPage('clientes')}>
                 Voltar
               </button>
@@ -1226,7 +1236,18 @@ function App() {
             {/* CONTEÚDO DA ABA: VEÍCULOS (FROTA) */}
             {fichaTab === 'veiculos' && (
               <>
-                <p style={{ color: '#555', marginBottom: '0.5rem' }}>🚗 Use o botão + para cadastrar veículos rapidamente.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <p style={{ color: '#555', margin: 0 }}>🚗 Gerencie a frota ativa deste cliente.</p>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      setNewOS({ ...newOS, clienteId: selectedClientePanorama.cliente._id });
+                      setCurrentPage('ordens');
+                    }}
+                  >
+                    + Nova Instalação de Veículo
+                  </button>
+                </div>
                 <div className="table-box">
                   <h3>Veículos Cadastrados</h3>
                   <div className="table-container" style={{ marginTop: '1rem' }}>
@@ -1277,7 +1298,18 @@ function App() {
             {/* CONTEÚDO DA ABA: HISTÓRICO DE AUDITORIA */}
             {fichaTab === 'historico' && (
               <>
-                <p style={{ color: '#555', marginBottom: '0.5rem' }}>📜 Use o botão + para registrar um novo evento.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <p style={{ color: '#555', margin: 0 }}>📜 Acompanhe todas as movimentações de equipamentos deste cliente.</p>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      setNewOS({ ...newOS, clienteId: selectedClientePanorama.cliente._id });
+                      setCurrentPage('ordens');
+                    }}
+                  >
+                    + Registrar Manutenção/OS
+                  </button>
+                </div>
                 <div className="card">
                   <h3>Linha do Tempo de Rastreabilidade</h3>
                   <div style={{ marginTop: '1rem' }}>
@@ -1317,7 +1349,15 @@ function App() {
             {/* CONTEÚDO DA ABA: FINANCEIRO (MENSALIDADES) */}
             {fichaTab === 'financeiro' && (
               <>
-                <p style={{ color: '#555', marginBottom: '0.5rem' }}>💰 Use o botão + para adicionar uma mensalidade.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <p style={{ color: '#555', margin: 0 }}>💰 Acompanhe o status financeiro de faturas e mensalidades.</p>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => setCurrentPage('mensalidades')}
+                  >
+                    + Gerenciar Faturas
+                  </button>
+                </div>
                 <div className="table-box">
                   <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
                   <div className="table-container" style={{ marginTop: '1rem' }}>
@@ -1367,6 +1407,35 @@ function App() {
                 </div>
               </div>
               </>
+            )}
+
+            {/* MODAL DE AJUDA DA FICHA */}
+            {showHelpModal && (
+              <div className="modal-overlay">
+                <div className="modal-content" style={{ maxWidth: '500px' }}>
+                  <div className="modal-header">
+                    <h3>Ajuda e Atalhos - Ficha do Cliente</h3>
+                    <button className="close-btn" onClick={() => setShowHelpModal(false)}>✕</button>
+                  </div>
+                  <div className="modal-body" style={{ lineHeight: '1.6' }}>
+                    <p>Bem-vindo à ficha completa do cliente! Veja algumas orientações para facilitar seu trabalho:</p>
+                    <ul style={{ paddingLeft: '20px', marginTop: '10px' }}>
+                      <li style={{ marginBottom: '10px' }}>
+                        <strong>Aba Veículos:</strong> Ao clicar no botão `+ Nova Instalação`, o sistema leva você direto para a abertura de O.S. já com este cliente selecionado!
+                      </li>
+                      <li style={{ marginBottom: '10px' }}>
+                        <strong>Aba Histórico:</strong> Tudo que acontecer com este cliente (instalação, manutenção e desinstalação) ficará salvo automaticamente aqui.
+                      </li>
+                      <li style={{ marginBottom: '10px' }}>
+                        <strong>Aba Financeiro:</strong> Exibe todas as mensalidades atreladas aos veículos deste cliente. Clique no botão de gerenciar para ir à área financeira.
+                      </li>
+                    </ul>
+                    <button className="btn btn-primary" style={{ width: '100%', marginTop: '15px' }} onClick={() => setShowHelpModal(false)}>
+                      Entendido
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
