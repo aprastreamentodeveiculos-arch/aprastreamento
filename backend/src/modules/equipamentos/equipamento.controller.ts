@@ -3,23 +3,23 @@ import { Equipamento } from './equipamento.model';
 
 export const createEquipamento = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tipo, identificador, numeroLinha, operadora, apn, marca, modelo } = req.body;
+    const { identificador, iccid, numeroLinha, operadora, apn, marca, modelo } = req.body;
 
-    if (!tipo || !identificador) {
-      res.status(400).json({ error: 'Tipo (RASTREADOR ou CHIP) e Identificador (IMEI ou ICCID) são obrigatórios.' });
+    if (!identificador) {
+      res.status(400).json({ error: 'O Identificador (IMEI do rastreador) é obrigatório.' });
       return;
     }
 
     // Verificar se já existe cadastrado com este identificador
     const existente = await Equipamento.findOne({ identificador });
     if (existente) {
-      res.status(400).json({ error: 'Já existe um equipamento cadastrado com este IMEI/ICCID.' });
+      res.status(400).json({ error: 'Já existe um equipamento cadastrado com este IMEI.' });
       return;
     }
 
     const novoEquipamento = new Equipamento({
-      tipo,
       identificador,
+      iccid,
       numeroLinha,
       operadora,
       apn,
