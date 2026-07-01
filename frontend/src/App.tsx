@@ -110,6 +110,7 @@ function App() {
 
   const [selectedClientePanorama, setSelectedClientePanorama] = useState<any>(null);
   const [fichaTab, setFichaTab] = useState<'veiculos' | 'historico' | 'financeiro'>('veiculos');
+  const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
 
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
@@ -319,12 +320,17 @@ function App() {
     e.preventDefault();
     if (!newCliente.nome || !newCliente.documento) return;
     try {
-      await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
+      // Cria cliente e veículos
+      const createdCliente = await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
       setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
       setVeiculosCliente([]);
       alert('Cliente e Veículos cadastrados com sucesso!');
+      // Carrega ficha do cliente recém‑criado
+      const panorama = await api.clientes.panorama(createdCliente._id);
+      setSelectedClientePanorama(panorama);
+      setFichaTab('veiculos');
+      setCurrentPage('clientes-ficha'); // Redireciona para a ficha com aba veículos aberta
       carregarDados();
-      setCurrentPage('clientes'); // Redireciona de volta para a listagem
     } catch (err: any) {
       alert('Erro ao cadastrar cliente: ' + err.message);
     }
@@ -1219,6 +1225,7 @@ function App() {
 
             {/* CONTEÚDO DA ABA: VEÍCULOS (FROTA) */}
             {fichaTab === 'veiculos' && (
+              <p style={{ color: '#555', marginBottom: '0.5rem' }}>🚗 Use o botão + para cadastrar veículos rapidamente.</p>
               <div className="table-box">
                 <h3>Veículos Cadastrados</h3>
                 <div className="table-container" style={{ marginTop: '1rem' }}>
@@ -1267,6 +1274,7 @@ function App() {
 
             {/* CONTEÚDO DA ABA: HISTÓRICO DE AUDITORIA */}
             {fichaTab === 'historico' && (
+              <p style={{ color: '#555', marginBottom: '0.5rem' }}>📜 Use o botão + para registrar um novo evento.</p>
               <div className="card">
                 <h3>Linha do Tempo de Rastreabilidade</h3>
                 <div style={{ marginTop: '1rem' }}>
@@ -1304,6 +1312,7 @@ function App() {
 
             {/* CONTEÚDO DA ABA: FINANCEIRO (MENSALIDADES) */}
             {fichaTab === 'financeiro' && (
+              <p style={{ color: '#555', marginBottom: '0.5rem' }}>💰 Use o botão + para adicionar uma mensalidade.</p>
               <div className="table-box">
                 <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
                 <div className="table-container" style={{ marginTop: '1rem' }}>
