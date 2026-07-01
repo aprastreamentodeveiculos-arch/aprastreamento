@@ -110,7 +110,7 @@ function App() {
 
   const [selectedClientePanorama, setSelectedClientePanorama] = useState<any>(null);
   const [fichaTab, setFichaTab] = useState<'veiculos' | 'historico' | 'financeiro'>('veiculos');
-  const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+
 
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
