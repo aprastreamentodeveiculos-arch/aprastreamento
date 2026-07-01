@@ -143,6 +143,8 @@ function App() {
   const [buscaHistorico, setBuscaHistorico] = useState<string>('');
   const [historicoResult, setHistoricoResult] = useState<string[]>([]);
   const [historicoTipo, setHistoricoTipo] = useState<'veiculo' | 'rastreador'>('veiculo');
+  const [filtroMensalidadeCliente, setFiltroMensalidadeCliente] = useState<string>('');
+  const [filtroMensalidadeStatus, setFiltroMensalidadeStatus] = useState<string>('todos');
 
   // Estados do Módulo de Estoque
   const [filtroEstoqueTipo, setFiltroEstoqueTipo] = useState<string>('todos');
@@ -1550,7 +1552,11 @@ function App() {
                   <p style={{ color: '#555', margin: 0 }}>💰 Acompanhe o status financeiro de faturas e mensalidades.</p>
                   <button 
                     className="btn btn-primary" 
-                    onClick={() => setCurrentPage('financeiro')}
+                    onClick={() => {
+                      setFiltroMensalidadeCliente(selectedClientePanorama.cliente.nome);
+                      setFinanceiroTab('mensalidades');
+                      setCurrentPage('financeiro');
+                    }}
                   >
                     + Gerenciar Faturas
                   </button>
@@ -2236,7 +2242,39 @@ function App() {
 
             {financeiroTab === 'mensalidades' ? (
               <div className="table-box">
-                <h3>Mensalidades Pendentes/Pagas</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <h3>Mensalidades Pendentes/Pagas</h3>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Buscar por cliente..." 
+                      value={filtroMensalidadeCliente}
+                      onChange={(e) => setFiltroMensalidadeCliente(e.target.value)}
+                      style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-deep)', color: 'var(--text-light)' }}
+                    />
+                    <select 
+                      value={filtroMensalidadeStatus}
+                      onChange={(e) => setFiltroMensalidadeStatus(e.target.value)}
+                      style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-deep)', color: 'var(--text-light)' }}
+                    >
+                      <option value="todos">Todos os Status</option>
+                      <option value="PENDENTE">Pendentes</option>
+                      <option value="PAGO">Pagos</option>
+                      <option value="ATRASADO">Atrasados</option>
+                    </select>
+                    {(filtroMensalidadeCliente || filtroMensalidadeStatus !== 'todos') && (
+                      <button 
+                        className="btn btn-secondary" 
+                        onClick={() => {
+                          setFiltroMensalidadeCliente('');
+                          setFiltroMensalidadeStatus('todos');
+                        }}
+                      >
+                        Limpar Filtros
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="table-container">
                   <table>
                     <thead>
@@ -2250,7 +2288,15 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mensalidades.map(m => (
+                      {mensalidades
+                        .filter(m => {
+                          const clienteNome = (m.clienteId?.nome || '').toLowerCase();
+                          const busca = filtroMensalidadeCliente.toLowerCase();
+                          if (busca && !clienteNome.includes(busca)) return false;
+                          if (filtroMensalidadeStatus !== 'todos' && m.status !== filtroMensalidadeStatus) return false;
+                          return true;
+                        })
+                        .map(m => (
                         <tr key={m._id}>
                           <td>
                             <div className="customer-cell">
