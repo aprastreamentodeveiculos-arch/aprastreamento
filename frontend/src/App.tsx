@@ -333,6 +333,7 @@ function App() {
       const panorama = await api.clientes.panorama(createdCliente._id);
       setSelectedClientePanorama(panorama);
       setFichaTab('veiculos');
+      setIsAddingFrota(true); // Abre o formulário de cadastro rápido automaticamente
       setCurrentPage('clientes-ficha'); // Redireciona para a ficha com aba veículos aberta
       carregarDados();
     } catch (err: any) {
