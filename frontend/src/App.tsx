@@ -1742,11 +1742,8 @@ function App() {
             <div className="view-header">
               <h1>Estoque de Equipamentos</h1>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button className="btn btn-secondary" onClick={() => setCurrentPage('estoque-cadastro-chip')}>
-                  + Cadastrar Chip
-                </button>
-                <button className="btn btn-primary" onClick={() => setCurrentPage('estoque-cadastro-rastreador')}>
-                  + Cadastrar Rastreador
+                <button className="btn btn-primary" onClick={() => setCurrentPage('estoque-cadastro-equipamento')}>
+                  + Cadastrar Equipamento / Chip
                 </button>
               </div>
             </div>
