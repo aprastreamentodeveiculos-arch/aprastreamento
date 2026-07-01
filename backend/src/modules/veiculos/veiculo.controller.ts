@@ -43,7 +43,7 @@ export const bulkCreate = async (req: Request, res: Response) => {
       });
     }
 
-    const createdVeiculos = [];
+    const createdVeiculos: any[] = [];
 
     for (const vData of veiculos) {
       const { placa, marca, modelo, cor, ano, imei } = vData;
@@ -57,8 +57,7 @@ export const bulkCreate = async (req: Request, res: Response) => {
         marca,
         modelo,
         cor,
-        ano,
-        status: 'ATIVO'
+        ano
       });
 
       createdVeiculos.push(novoVeiculo);
@@ -70,16 +69,16 @@ export const bulkCreate = async (req: Request, res: Response) => {
           // Atualiza o status para INSTALADO
           equipamento.status = 'INSTALADO';
           await equipamento.save();
-        }
 
-        // 3. Gera o Histórico de Instalação para amarrar o Rastreador ao Veículo e torná-lo ativo no dashboard
-        await HistoricoInstalacao.create({
-          veiculoId: novoVeiculo._id,
-          rastreadorId: equipamento._id,
-          tecnicoId: tecnicoSistema._id,
-          dataInstalacao: new Date(),
-          observacao: 'Cadastro em Massa (Migração/Frota)'
-        });
+          // 3. Gera o Histórico de Instalação para amarrar o Rastreador ao Veículo e torná-lo ativo no dashboard
+          await HistoricoInstalacao.create({
+            veiculoId: novoVeiculo._id,
+            rastreadorId: equipamento._id,
+            tecnicoId: tecnicoSistema._id,
+            dataInstalacao: new Date(),
+            observacao: 'Cadastro em Massa (Migração/Frota)'
+          });
+        }
       }
     }
 
