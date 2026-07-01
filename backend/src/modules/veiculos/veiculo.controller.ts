@@ -46,7 +46,7 @@ export const bulkCreate = async (req: Request, res: Response) => {
     const createdVeiculos: any[] = [];
 
     for (const vData of veiculos) {
-      const { placa, marca, modelo, cor, ano, imei } = vData;
+      const { placa, marca, modelo, cor, ano, imei, iccid } = vData;
 
       if (!placa) continue; // Placa é obrigatória
 
@@ -68,6 +68,9 @@ export const bulkCreate = async (req: Request, res: Response) => {
         if (equipamento) {
           // Atualiza o status para INSTALADO
           equipamento.status = 'INSTALADO';
+          if (iccid && iccid.trim() !== '') {
+            equipamento.iccid = iccid;
+          }
           await equipamento.save();
 
           // 3. Gera o Histórico de Instalação para amarrar o Rastreador ao Veículo e torná-lo ativo no dashboard

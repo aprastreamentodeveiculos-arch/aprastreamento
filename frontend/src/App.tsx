@@ -114,7 +114,7 @@ function App() {
   
   // Cadastro de Frota em Massa
   const [isAddingFrota, setIsAddingFrota] = useState<boolean>(false);
-  const [frotaRows, setFrotaRows] = useState([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
+  const [frotaRows, setFrotaRows] = useState([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }]);
 
   const handleSelectAgendamento = (osId: string) => {
     setSelectedOSId(osId);
@@ -457,7 +457,7 @@ function App() {
       });
       alert('Frota cadastrada com sucesso!');
       setIsAddingFrota(false);
-      setFrotaRows([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
+      setFrotaRows([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }]);
       
       // Recarrega a ficha do cliente
       const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
@@ -1311,6 +1311,7 @@ function App() {
                             <th>Cor</th>
                             <th>Ano</th>
                             <th>IMEI (Rastreador)</th>
+                            <th>ICCID (Chip)</th>
                             <th></th>
                           </tr>
                         </thead>
@@ -1360,9 +1361,16 @@ function App() {
                                 }} />
                               </td>
                               <td>
+                                <input type="text" className="input" placeholder="ICCID 20 dígitos" value={row.iccid} onChange={(e) => {
+                                  const newRows = [...frotaRows];
+                                  newRows[index].iccid = e.target.value;
+                                  setFrotaRows(newRows);
+                                }} />
+                              </td>
+                              <td>
                                 <button className="btn btn-secondary" style={{ padding: '0.4rem' }} onClick={() => {
                                   const newRows = frotaRows.filter((_, i) => i !== index);
-                                  setFrotaRows(newRows.length ? newRows : [{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }]);
+                                  setFrotaRows(newRows.length ? newRows : [{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }]);
                                 }}>🗑️</button>
                               </td>
                             </tr>
@@ -1371,7 +1379,7 @@ function App() {
                       </table>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <button className="btn btn-secondary" onClick={() => setFrotaRows([...frotaRows, { placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '' }])}>
+                      <button className="btn btn-secondary" onClick={() => setFrotaRows([...frotaRows, { placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }])}>
                         + Adicionar Linha
                       </button>
                       <button className="btn btn-primary" onClick={handleSalvarFrota}>
