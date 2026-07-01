@@ -136,9 +136,18 @@ async function request(url: string, options?: RequestInit) {
       ...options
     });
 
-    const data = await res.json();
+    let data: any;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error(`O servidor retornou uma resposta inválida (Status: ${res.status}). Pode estar reiniciando/compilando.`);
+    }
+
     if (!res.ok) {
-      throw new Error(data.error || 'Erro na requisição da API.');
+      // Jogar um erro que contenha o data inteiro, não apenas string
+      const err: any = new Error(data.message || data.error || 'Erro na requisição da API.');
+      err.response = { data };
+      throw err;
     }
     return data;
   } catch (err: any) {
