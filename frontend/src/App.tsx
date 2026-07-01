@@ -1723,11 +1723,12 @@ function App() {
                   <thead>
                     <tr>
                       <th>Tipo</th>
-                      <th>Identificador (IMEI / ICCID)</th>
+                      <th>IMEI (Rastreador)</th>
+                      <th>ICCID (Chip)</th>
+                      <th>Operadora / Linha</th>
                       <th>Marca / Modelo</th>
-                      <th>Operadora</th>
                       <th>Status</th>
-                      <th>Posse / Responsável</th>
+                      <th>Posse / Resp.</th>
                       <th>Ações</th>
                     </tr>
                   </thead>
@@ -1741,15 +1742,18 @@ function App() {
                           <tr>
                             <td>
                               <span className="badge badge-info">
-                                📡 EQUIPAMENTO
+                                📡 RASTREADOR
                               </span>
                             </td>
                             <td><strong style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{eq.identificador}</strong></td>
-                            <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                              {eq.marca || '—'} {eq.modelo ? `/ ${eq.modelo}` : ''}
+                            <td style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                              {eq.iccid || '—'}
                             </td>
                             <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                              {eq.operadora || '—'}
+                              {eq.operadora || '—'} {eq.numeroLinha ? `(${eq.numeroLinha})` : ''}
+                            </td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                              {eq.marca || '—'} {eq.modelo ? `/ ${eq.modelo}` : ''}
                             </td>
                             <td>
                               <span className={`status-badge ${
@@ -1802,7 +1806,7 @@ function App() {
                           {/* Linha de transferência expandida */}
                           {transferindoId === eq._id && (
                             <tr style={{ background: 'rgba(59,130,246,0.05)' }}>
-                              <td colSpan={7} style={{ padding: '0.75rem 1.5rem' }}>
+                                <td colSpan={8} style={{ padding: '0.75rem 1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Transferir para:</span>
                                   <select
@@ -1840,7 +1844,7 @@ function App() {
                       (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
                     ).length === 0 && (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                           Nenhum equipamento encontrado para os filtros selecionados.
                         </td>
                       </tr>
