@@ -1495,7 +1495,7 @@ function App() {
                   <p style={{ color: '#555', margin: 0 }}>💰 Acompanhe o status financeiro de faturas e mensalidades.</p>
                   <button 
                     className="btn btn-primary" 
-                    onClick={() => setCurrentPage('mensalidades')}
+                    onClick={() => setCurrentPage('financeiro')}
                   >
                     + Gerenciar Faturas
                   </button>
