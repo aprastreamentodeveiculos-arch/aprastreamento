@@ -153,13 +153,13 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-secondary {
-  background: #141519;
-  border: 1px solid var(--border-color);
+  background: #1E2026; /* Um pouco mais claro que o fundo */
+  border: 1px solid #2D313F;
   color: var(--text-main);
 }
 
 .btn-secondary:hover {
-  background: #1C1D22;
+  background: #2D313F;
   border-color: var(--primary);
   box-shadow: 0 0 10px rgba(255, 0, 60, 0.1);
   transform: translateY(-1px);
