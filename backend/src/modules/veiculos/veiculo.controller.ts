@@ -142,8 +142,8 @@ export const updateVeiculo = async (req: Request, res: Response) => {
           }
 
           await HistoricoInstalacao.create({
-            veiculoId: id,
-            rastreadorId: rastreadorId,
+            veiculoId: id as string,
+            rastreadorId: rastreadorId as string,
             tecnicoId: tecnicoSistema._id,
             dataInstalacao: new Date(),
             observacao: 'Troca/Designação manual pelo painel de Edição de Veículo'
