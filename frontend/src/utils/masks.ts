@@ -31,7 +31,6 @@ export const maskPlaca = (value: string) => {
     // Vamos apenas colocar o hifen para o padrão antigo se o usuário estiver digitando
     // A placa real sempre tem 7 caracteres.
     v = v.substring(0, 7);
-    const isMercosul = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(v);
     const isAntiga = /^[A-Z]{3}[0-9]{4}$/.test(v);
 
     // Formatar visualmente como ABC-1234 para o padrao antigo

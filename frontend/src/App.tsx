@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
-import { maskCpfCnpj, maskTelefone, maskPlaca, maskCurrency, unmaskCurrency } from './utils/masks';
+import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
 
 function App() {
   // Controle de Visualização e Perfis
