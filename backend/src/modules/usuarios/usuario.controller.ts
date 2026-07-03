@@ -47,7 +47,13 @@ export const updateUsuario = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { nome, email, role, ativo, tecnicoId, senha } = req.body;
 
-    const updates: any = { nome, email, role, ativo, tecnicoId };
+    const updates: any = { 
+      nome, 
+      email: email.toLowerCase(), 
+      role, 
+      ativo, 
+      tecnicoId: tecnicoId || undefined 
+    };
 
     if (senha && senha.trim() !== '') {
       const salt = await bcrypt.genSalt(10);
