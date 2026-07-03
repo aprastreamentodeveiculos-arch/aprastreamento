@@ -83,8 +83,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-          font-family: 'Inter', sans-serif;
+          background: #0A0B0D;
+          font-family: 'Outfit', sans-serif;
           position: relative;
           overflow: hidden;
         }
@@ -94,7 +94,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           position: absolute;
           width: 200%;
           height: 200%;
-          background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+          background: radial-gradient(circle at 50% 50%, rgba(255, 0, 60, 0.1) 0%, transparent 50%);
           animation: pulse 10s infinite;
         }
 
@@ -105,15 +105,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         .login-card {
-          background: rgba(30, 41, 59, 0.7);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: #121316;
+          border: 1px solid #1E2026;
           padding: 3rem 2.5rem;
           border-radius: 24px;
           width: 100%;
           max-width: 420px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
           position: relative;
           z-index: 10;
           animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -132,7 +130,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         .logo-placeholder {
           width: 64px;
           height: 64px;
-          background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+          background: linear-gradient(135deg, #FF003C 0%, #A30022 100%);
           border-radius: 16px;
           display: flex;
           align-items: center;
@@ -141,11 +139,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           font-weight: 800;
           color: white;
           margin: 0 auto 1.5rem;
-          box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 10px 25px -5px rgba(255, 0, 60, 0.4);
         }
 
         .login-header h2 {
-          color: #f8fafc;
+          color: #FFFFFF;
           font-size: 1.75rem;
           font-weight: 700;
           margin: 0 0 0.5rem;
@@ -153,7 +151,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         .login-header p {
-          color: #94a3b8;
+          color: #A1A1AA;
           font-size: 0.95rem;
           margin: 0;
         }
@@ -166,7 +164,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         .form-group label {
           display: block;
-          color: #cbd5e1;
+          color: #A1A1AA;
           font-size: 0.875rem;
           font-weight: 500;
           margin-bottom: 0.5rem;
@@ -174,9 +172,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         .input-login {
           width: 100%;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: white;
+          background: #0A0B0D;
+          border: 1px solid #1E2026;
+          color: #FFFFFF;
           padding: 0.875rem 1rem;
           border-radius: 12px;
           font-size: 1rem;
@@ -185,17 +183,17 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         .input-login:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-          background: rgba(15, 23, 42, 0.8);
+          border-color: #FF003C;
+          box-shadow: 0 0 0 3px rgba(255, 0, 60, 0.2);
+          background: #18191E;
         }
 
         .input-login::placeholder {
-          color: #475569;
+          color: #52525B;
         }
 
         .btn-login {
-          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+          background: linear-gradient(135deg, #FF003C 0%, #A30022 100%);
           color: white;
           border: none;
           padding: 1rem;
@@ -205,12 +203,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           cursor: pointer;
           transition: all 0.3s ease;
           margin-top: 1rem;
-          box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+          box-shadow: 0 4px 14px 0 rgba(255, 0, 60, 0.39);
         }
 
         .btn-login:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+          box-shadow: 0 6px 20px rgba(255, 0, 60, 0.5);
         }
 
         .btn-login:disabled {
@@ -219,9 +217,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         .login-error {
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          color: #fca5a5;
+          background: rgba(255, 0, 60, 0.1);
+          border: 1px solid rgba(255, 0, 60, 0.2);
+          color: #FF003C;
           padding: 0.75rem 1rem;
           border-radius: 12px;
           font-size: 0.875rem;
@@ -244,7 +242,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         .login-footer p {
-          color: #64748b;
+          color: #52525B;
           font-size: 0.8rem;
           margin: 0;
         }
