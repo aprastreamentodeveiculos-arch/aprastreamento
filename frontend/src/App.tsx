@@ -1657,20 +1657,13 @@ function App() {
                                   </span>
                                 </td>
                                 <td>
-                                  <button 
-                                    className="btn btn-secondary" 
-                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                                    onClick={() => setEditVeiculo(v)}
-                                  >
-                                    ✎ Editar
-                                  </button>
-                                  <button 
-                                    className="btn" 
-                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', background: 'var(--danger)', color: '#fff', border: 'none' }}
-                                    onClick={() => handleDeleteVeiculo(v._id)}
-                                  >
-                                    🗑️ Excluir
-                                  </button>
+                                  <div className="dropdown">
+                                    <button className="dropdown-btn">Ações ▼</button>
+                                    <div className="dropdown-content">
+                                      <button onClick={() => setEditVeiculo(v)}>✎ Editar</button>
+                                      <button className="danger" onClick={() => handleDeleteVeiculo(v._id)}>🗑️ Excluir</button>
+                                    </div>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -2042,49 +2035,38 @@ function App() {
                               {(eq.tecnicoResponsavelId as any)?.nome || 'Estoque Central'}
                             </td>
                             <td>
-                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                {eq.status === 'ESTOQUE' && (
-                                  <button
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                                    onClick={() => {
-                                      const isTransfering = transferindoId === eq._id;
-                                      setTransferindoId(isTransfering ? null : eq._id);
-                                      setTecnicoParaTransferencia('');
-                                    }}
-                                  >
-                                    {transferindoId === eq._id ? '✕ Cancelar' : '↗ Transferir'}
-                                  </button>
-                                )}
-                                {eq.status === 'COM_TECNICO' && (
-                                  <button
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                                    onClick={() => handleDevolverAoEstoque(eq._id)}
-                                  >
-                                    ↩ Devolver
-                                  </button>
-                                )}
+                              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <div className="dropdown">
+                                  <button className="dropdown-btn">Ações ▼</button>
+                                  <div className="dropdown-content">
+                                    {eq.status === 'ESTOQUE' && (
+                                      <button onClick={() => {
+                                        const isTransfering = transferindoId === eq._id;
+                                        setTransferindoId(isTransfering ? null : eq._id);
+                                        setTecnicoParaTransferencia('');
+                                      }}>
+                                        {transferindoId === eq._id ? '✕ Cancelar' : '↗ Transferir'}
+                                      </button>
+                                    )}
+                                    {eq.status === 'COM_TECNICO' && (
+                                      <button onClick={() => handleDevolverAoEstoque(eq._id)}>
+                                        ↩ Devolver
+                                      </button>
+                                    )}
+                                    <button onClick={() => setEditEquipamento(eq)}>
+                                      ✎ Editar
+                                    </button>
+                                    <button className="danger" onClick={() => handleDeleteEquipamento(eq._id)}>
+                                      🗑️ Excluir
+                                    </button>
+                                  </div>
+                                </div>
                                 {eq.status === 'INSTALADO' && (
                                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Em uso</span>
                                 )}
                                 {eq.status === 'DEFEITUOSO' && (
                                   <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic' }}>Defeituoso</span>
                                 )}
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                                  onClick={() => setEditEquipamento(eq)}
-                                >
-                                  ✎ Editar
-                                </button>
-                                <button
-                                  className="btn"
-                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', background: 'var(--danger)', color: '#fff', border: 'none' }}
-                                  onClick={() => handleDeleteEquipamento(eq._id)}
-                                >
-                                  🗑️ Excluir
-                                </button>
                               </div>
                             </td>
                           </tr>
@@ -2549,18 +2531,21 @@ function App() {
                             </span>
                           </td>
                           <td>
-                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                              {m.status !== 'PAGO' && (
-                                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
-                                  ✓ Pagar
+                            <div className="dropdown">
+                              <button className="dropdown-btn">Ações ▼</button>
+                              <div className="dropdown-content">
+                                {m.status !== 'PAGO' && (
+                                  <button onClick={() => handleBaixarMensalidade(m._id)}>
+                                    ✓ Pagar
+                                  </button>
+                                )}
+                                <button onClick={() => setEditMensalidade(m)}>
+                                  ✎ Editar
                                 </button>
-                              )}
-                              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
-                                ✎ Editar
-                              </button>
-                              <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
-                                🗑️ Excluir
-                              </button>
+                                <button className="danger" onClick={() => handleDeleteMensalidade(m._id)}>
+                                  🗑️ Excluir
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>
