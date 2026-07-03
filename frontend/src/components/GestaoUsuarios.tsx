@@ -13,6 +13,7 @@ export const GestaoUsuarios: React.FC = () => {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [telefone, setTelefone] = useState('');
   const [role, setRole] = useState<'admin' | 'tecnico'>('tecnico');
   const [tecnicoId, setTecnicoId] = useState('');
   const [ativo, setAtivo] = useState(true);
@@ -53,6 +54,7 @@ export const GestaoUsuarios: React.FC = () => {
       setSenha('');
       setRole('tecnico');
       setTecnicoId('');
+      setTelefone('');
       setAtivo(true);
     }
     setShowModal(true);
@@ -61,7 +63,7 @@ export const GestaoUsuarios: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = { nome, email, senha, role, tecnicoId, ativo };
+      const payload = { nome, email, senha, telefone, role, tecnicoId, ativo };
       if (editUser) {
         await api.usuarios.update(editUser._id, payload);
       } else {
@@ -168,15 +170,24 @@ export const GestaoUsuarios: React.FC = () => {
               </div>
 
               {role === 'tecnico' && (
-                <div className="form-group">
-                  <label>Vincular a qual Técnico? (Obrigatório para OS)</label>
-                  <select value={tecnicoId} onChange={e => setTecnicoId(e.target.value)} required className="input">
-                    <option value="">Selecione um técnico...</option>
-                    {tecnicos.map(t => (
-                      <option key={t._id} value={t._id}>{t.nome}</option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="form-group">
+                    <label>Vincular a qual Técnico?</label>
+                    <select value={tecnicoId} onChange={e => setTecnicoId(e.target.value)} className="input">
+                      <option value="">&lt; Criar Novo Técnico Automaticamente &gt;</option>
+                      {tecnicos.map(t => (
+                        <option key={t._id} value={t._id}>{t.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {!tecnicoId && !editUser && (
+                    <div className="form-group">
+                      <label>Telefone do Novo Técnico (Opcional)</label>
+                      <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} className="input" placeholder="(11) 99999-9999" />
+                    </div>
+                  )}
+                </>
               )}
 
               {editUser && (

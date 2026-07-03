@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { Usuario } from './usuario.model';
+import { Tecnico } from '../tecnicos/tecnico.model';
 
 export const listUsuarios = async (req: Request, res: Response) => {
   try {
@@ -13,7 +14,7 @@ export const listUsuarios = async (req: Request, res: Response) => {
 
 export const createUsuario = async (req: Request, res: Response) => {
   try {
-    const { nome, email, senha, role, tecnicoId } = req.body;
+    const { nome, email, senha, role, tecnicoId, telefone } = req.body;
 
     const existe = await Usuario.findOne({ email: email.toLowerCase() });
     if (existe) {
@@ -23,12 +24,25 @@ export const createUsuario = async (req: Request, res: Response) => {
     const salt = await bcrypt.genSalt(10);
     const senhaHash = await bcrypt.hash(senha, salt);
 
+    let finalTecnicoId = tecnicoId || undefined;
+
+    // Se for técnico e não passou um ID, criar o técnico automaticamente
+    if (role === 'tecnico' && !finalTecnicoId) {
+      const novoTec = await Tecnico.create({
+        nome,
+        telefone: telefone || 'Não Informado',
+        email: email.toLowerCase(),
+        ativo: true
+      });
+      finalTecnicoId = novoTec._id;
+    }
+
     const novoUsuario = await Usuario.create({
       nome,
       email: email.toLowerCase(),
       senhaHash,
       role,
-      tecnicoId: tecnicoId || undefined
+      tecnicoId: finalTecnicoId
     });
 
     res.status(201).json({ 
@@ -63,6 +77,14 @@ export const updateUsuario = async (req: Request, res: Response) => {
     const usuario = await Usuario.findByIdAndUpdate(id, updates, { new: true }).select('-senhaHash');
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Sincronizar os dados com o Técnico caso seja um usuário do tipo técnico
+    if (usuario.tecnicoId) {
+      await Tecnico.findByIdAndUpdate(usuario.tecnicoId, {
+        nome: usuario.nome,
+        ativo: usuario.ativo
+      });
     }
 
     res.json(usuario);
