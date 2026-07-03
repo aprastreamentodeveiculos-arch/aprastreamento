@@ -92,6 +92,9 @@ function App() {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [categorias, setCategorias] = useState<CategoriaDespesa[]>([]);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
+  const [isMensalidadeModalOpen, setIsMensalidadeModalOpen] = useState(false);
+  const [editMensalidade, setEditMensalidade] = useState<any>(null);
+  const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
 
   // Estados dos formulários de cadastro
   const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
@@ -145,6 +148,15 @@ function App() {
   const [historicoTipo, setHistoricoTipo] = useState<'veiculo' | 'rastreador'>('veiculo');
   const [filtroMensalidadeCliente, setFiltroMensalidadeCliente] = useState<string>('');
   const [filtroMensalidadeStatus, setFiltroMensalidadeStatus] = useState<string>('todos');
+
+  // Estados de Busca Global (Buque)
+  const [buscaCliente, setBuscaCliente] = useState<string>('');
+  const [buscaEstoque, setBuscaEstoque] = useState<string>('');
+  
+  // Estados de Modais de Edição
+  const [editCliente, setEditCliente] = useState<Cliente | null>(null);
+  const [editVeiculo, setEditVeiculo] = useState<any | null>(null);
+  const [editEquipamento, setEditEquipamento] = useState<Equipamento | null>(null);
 
   // Estados do Módulo de Estoque
   const [filtroEstoqueTipo, setFiltroEstoqueTipo] = useState<string>('todos');
@@ -579,6 +591,47 @@ function App() {
     }
   };
 
+  const handleCreateMensalidade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.financeiro.createAvulsa(newMensalidade);
+      alert('Mensalidade avulsa criada com sucesso!');
+      setIsMensalidadeModalOpen(false);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    }
+  };
+
+  const handleEditMensalidadeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editMensalidade) return;
+    try {
+      await api.financeiro.update(editMensalidade._id, {
+        valor: editMensalidade.valor,
+        dataVencimento: editMensalidade.dataVencimento,
+        status: editMensalidade.status,
+        observacao: editMensalidade.observacao
+      });
+      alert('Mensalidade atualizada com sucesso!');
+      setEditMensalidade(null);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    }
+  };
+
+  const handleDeleteMensalidade = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta mensalidade?')) return;
+    try {
+      await api.financeiro.delete(id);
+      alert('Mensalidade excluída com sucesso!');
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    }
+  };
+
   // Admin dá baixa na mensalidade
   const handleBaixarMensalidade = async (id: string) => {
     try {
@@ -680,6 +733,99 @@ function App() {
       setCurrentPage('estoque');
     } catch (err: any) {
       alert('Erro ao cadastrar equipamento: ' + err.message);
+    }
+  };
+
+  // Edições
+  const handleEditClienteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCliente) return;
+    try {
+      await api.clientes.update(editCliente._id, {
+        nome: editCliente.nome,
+        documento: editCliente.documento,
+        email: editCliente.email,
+        whatsapp: editCliente.whatsapp,
+        planoId: editCliente.planoId,
+        diaVencimento: editCliente.diaVencimento
+      });
+      alert('Cliente atualizado com sucesso!');
+      setEditCliente(null);
+      carregarDados();
+      if (selectedClientePanorama && selectedClientePanorama.cliente._id === editCliente._id) {
+        handleAbrirFichaCliente(editCliente._id);
+      }
+    } catch (err: any) {
+      alert('Erro ao editar cliente: ' + err.message);
+    }
+  };
+
+  const handleDeleteVeiculo = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.')) return;
+    try {
+      await api.veiculos.delete(id);
+      alert('Veículo excluído com sucesso!');
+      carregarDados();
+      if (selectedClientePanorama) {
+        handleAbrirFichaCliente(selectedClientePanorama.cliente._id);
+      }
+    } catch (err: any) {
+      alert('Erro ao excluir veículo: ' + err.message);
+    }
+  };
+
+  const handleDeleteEquipamento = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este equipamento?')) return;
+    try {
+      await api.equipamentos.delete(id);
+      alert('Equipamento excluído com sucesso!');
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao excluir equipamento: ' + err.message);
+    }
+  };
+
+
+  const handleEditVeiculoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editVeiculo) return;
+    try {
+      await api.veiculos.update(editVeiculo._id, {
+        placa: editVeiculo.placa,
+        marca: editVeiculo.marca,
+        modelo: editVeiculo.modelo,
+        cor: editVeiculo.cor,
+        ano: editVeiculo.ano
+      });
+      alert('Veículo atualizado com sucesso!');
+      setEditVeiculo(null);
+      carregarDados();
+      if (selectedClientePanorama) {
+        handleAbrirFichaCliente(selectedClientePanorama.cliente._id);
+      }
+    } catch (err: any) {
+      alert('Erro ao editar veículo: ' + err.message);
+    }
+  };
+
+  const handleEditEquipamentoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEquipamento) return;
+    try {
+      await api.equipamentos.update(editEquipamento._id, {
+        identificador: editEquipamento.identificador,
+        iccid: editEquipamento.iccid,
+        numeroLinha: editEquipamento.numeroLinha,
+        operadora: editEquipamento.operadora,
+        marca: editEquipamento.marca,
+        modelo: editEquipamento.modelo,
+        apn: editEquipamento.apn
+      });
+      alert('Equipamento atualizado com sucesso!');
+      setEditEquipamento(null);
+      carregarDados();
+    } catch (err: any) {
+      alert('Erro ao editar equipamento: ' + err.message);
     }
   };
 
@@ -1068,23 +1214,37 @@ function App() {
             </div>
 
             <div className="table-box">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3>{mostrarInativos ? 'Frotas Inativas (Desligadas)' : 'Frotas Ativas'}</h3>
-                <div className="filter-tabs">
-                  <button 
-                    className={`btn ${!mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
-                    onClick={() => mostrarInativos && handleToggleInativos()}
-                    style={{ padding: '0.4rem 1rem', borderRadius: '4px 0 0 4px', borderRight: 'none' }}
-                  >
-                    Ativos ({clientes.length})
-                  </button>
-                  <button 
-                    className={`btn ${mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
-                    onClick={() => !mostrarInativos && handleToggleInativos()}
-                    style={{ padding: '0.4rem 1rem', borderRadius: '0 4px 4px 0' }}
-                  >
-                    Inativos
-                  </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>{mostrarInativos ? 'Frotas Inativas (Desligadas)' : 'Frotas Ativas'}</h3>
+                  <div className="filter-tabs">
+                    <button 
+                      className={`btn ${!mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
+                      onClick={() => mostrarInativos && handleToggleInativos()}
+                      style={{ padding: '0.4rem 1rem', borderRadius: '4px 0 0 4px', borderRight: 'none' }}
+                    >
+                      Ativos ({clientes.length})
+                    </button>
+                    <button 
+                      className={`btn ${mostrarInativos ? 'btn-primary' : 'btn-secondary'}`} 
+                      onClick={() => !mostrarInativos && handleToggleInativos()}
+                      style={{ padding: '0.4rem 1rem', borderRadius: '0 4px 4px 0' }}
+                    >
+                      Inativos
+                    </button>
+                  </div>
+                </div>
+                
+                {/* BARRA DE BUSCA */}
+                <div style={{ display: 'flex' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Busque por nome do cliente, documento ou email..." 
+                    className="input" 
+                    style={{ width: '100%', maxWidth: '400px' }}
+                    value={buscaCliente}
+                    onChange={(e) => setBuscaCliente(e.target.value)}
+                  />
                 </div>
               </div>
 
@@ -1101,7 +1261,13 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(mostrarInativos ? clientesInativos : clientes).map(c => (
+                    {(mostrarInativos ? clientesInativos : clientes)
+                      .filter(c => !buscaCliente || 
+                        c.nome.toLowerCase().includes(buscaCliente.toLowerCase()) || 
+                        c.documento.toLowerCase().includes(buscaCliente.toLowerCase()) || 
+                        (c.email && c.email.toLowerCase().includes(buscaCliente.toLowerCase()))
+                      )
+                      .map(c => (
                       <tr key={c._id}>
                         <td>
                           <div className="customer-cell" style={{ cursor: 'pointer' }} onClick={() => handleAbrirFichaCliente(c._id)}>
@@ -1243,6 +1409,12 @@ function App() {
                 </button>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => setEditCliente(selectedClientePanorama.cliente)}
+                >
+                  ✎ Editar Cliente
+                </button>
                 <button 
                   className="btn" 
                   style={{ background: 'var(--danger)', color: '#fff', border: 'none' }} 
@@ -1462,6 +1634,7 @@ function App() {
                             <th>Rastreador Instalado (IMEI)</th>
                             <th>Chip M2M (ICCID)</th>
                             <th>Status da Instalação</th>
+                            <th>Ações</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1482,6 +1655,22 @@ function App() {
                                   <span className={`status-badge ${instalacaoAtiva ? 'active' : 'inactive'}`}>
                                     {instalacaoAtiva ? 'INSTALADO & ATIVO' : 'SEM DISPOSITIVO'}
                                   </span>
+                                </td>
+                                <td>
+                                  <button 
+                                    className="btn btn-secondary" 
+                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                                    onClick={() => setEditVeiculo(v)}
+                                  >
+                                    ✎ Editar
+                                  </button>
+                                  <button 
+                                    className="btn" 
+                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', background: 'var(--danger)', color: '#fff', border: 'none' }}
+                                    onClick={() => handleDeleteVeiculo(v._id)}
+                                  >
+                                    🗑️ Excluir
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -1749,29 +1938,47 @@ function App() {
             </div>
 
             {/* Filtros */}
-            <div className="card" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', padding: '1rem 1.5rem', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Tipo:</label>
-                <select value={filtroEstoqueTipo} onChange={e => setFiltroEstoqueTipo(e.target.value)} style={{ flex: 1 }}>
-                  <option value="todos">Todos</option>
-                  <option value="RASTREADOR">Rastreadores</option>
-                  <option value="CHIP">Chips</option>
-                </select>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 1.5rem', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '180px' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Tipo:</label>
+                  <select value={filtroEstoqueTipo} onChange={e => setFiltroEstoqueTipo(e.target.value)} style={{ flex: 1 }}>
+                    <option value="todos">Todos</option>
+                    <option value="RASTREADOR">Rastreadores</option>
+                    <option value="CHIP">Chips</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Status:</label>
+                  <select value={filtroEstoqueStatus} onChange={e => setFiltroEstoqueStatus(e.target.value)} style={{ flex: 1 }}>
+                    {filtroEstoqueStatus === 'todos' && <option value="todos">Todos os Equipamentos</option>}
+                    <option value="ESTOQUE">Em Estoque</option>
+                    <option value="COM_TECNICO">Com Técnico</option>
+                    <option value="INSTALADO">Instalado</option>
+                    <option value="DEFEITUOSO">Defeituoso</option>
+                  </select>
+                </div>
+                <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  {equipamentos.filter(eq =>
+                    (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus) &&
+                    (!buscaEstoque || 
+                      eq.identificador?.toLowerCase().includes(buscaEstoque.toLowerCase()) || 
+                      eq.iccid?.toLowerCase().includes(buscaEstoque.toLowerCase()) || 
+                      eq.numeroLinha?.toLowerCase().includes(buscaEstoque.toLowerCase())
+                    )
+                  ).length} equipamento(s)
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Status:</label>
-                <select value={filtroEstoqueStatus} onChange={e => setFiltroEstoqueStatus(e.target.value)} style={{ flex: 1 }}>
-                  {filtroEstoqueStatus === 'todos' && <option value="todos">Todos os Equipamentos</option>}
-                  <option value="ESTOQUE">Em Estoque</option>
-                  <option value="COM_TECNICO">Com Técnico</option>
-                  <option value="INSTALADO">Instalado</option>
-                  <option value="DEFEITUOSO">Defeituoso</option>
-                </select>
-              </div>
-              <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                {equipamentos.filter(eq =>
-                  (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
-                ).length} equipamento(s)
+              
+              <div style={{ display: 'flex' }}>
+                <input 
+                  type="text" 
+                  placeholder="Busque por IMEI, ICCID ou Linha..." 
+                  className="input" 
+                  style={{ width: '100%', maxWidth: '400px' }}
+                  value={buscaEstoque}
+                  onChange={(e) => setBuscaEstoque(e.target.value)}
+                />
               </div>
             </div>
 
@@ -1794,7 +2001,12 @@ function App() {
                   <tbody>
                     {equipamentos
                       .filter(eq =>
-                        (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus)
+                        (filtroEstoqueStatus === 'todos' || eq.status === filtroEstoqueStatus) &&
+                        (!buscaEstoque || 
+                          eq.identificador?.toLowerCase().includes(buscaEstoque.toLowerCase()) || 
+                          eq.iccid?.toLowerCase().includes(buscaEstoque.toLowerCase()) || 
+                          eq.numeroLinha?.toLowerCase().includes(buscaEstoque.toLowerCase())
+                        )
                       )
                       .map(eq => (
                         <React.Fragment key={eq._id}>
@@ -1859,6 +2071,20 @@ function App() {
                                 {eq.status === 'DEFEITUOSO' && (
                                   <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontStyle: 'italic' }}>Defeituoso</span>
                                 )}
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
+                                  onClick={() => setEditEquipamento(eq)}
+                                >
+                                  ✎ Editar
+                                </button>
+                                <button
+                                  className="btn"
+                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', background: 'var(--danger)', color: '#fff', border: 'none' }}
+                                  onClick={() => handleDeleteEquipamento(eq._id)}
+                                >
+                                  🗑️ Excluir
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -2240,7 +2466,12 @@ function App() {
             {financeiroTab === 'mensalidades' ? (
               <div className="table-box">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                  <h3>Mensalidades Pendentes/Pagas</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h3>Mensalidades Pendentes/Pagas</h3>
+                    <button className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setIsMensalidadeModalOpen(true)}>
+                      + Nova Mensalidade Avulsa
+                    </button>
+                  </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <input 
                       type="text" 
@@ -2318,11 +2549,19 @@ function App() {
                             </span>
                           </td>
                           <td>
-                            {m.status !== 'PAGO' && (
-                              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
-                                Confirmar Recebimento
+                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              {m.status !== 'PAGO' && (
+                                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
+                                  ✓ Pagar
+                                </button>
+                              )}
+                              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
+                                ✎ Editar
                               </button>
-                            )}
+                              <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
+                                🗑️ Excluir
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -3220,6 +3459,182 @@ function App() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* --- MODAIS DE EDIÇÃO --- */}
+      {/* Modal Edição Cliente */}
+      {editCliente && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Editar Cliente</h3>
+              <button className="close-btn" onClick={() => setEditCliente(null)}>✕</button>
+            </div>
+            <form onSubmit={handleEditClienteSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label>Nome Completo / Razão Social</label>
+                <input type="text" value={editCliente.nome} onChange={(e) => setEditCliente({...editCliente, nome: e.target.value})} required className="input" />
+              </div>
+              <div className="form-group">
+                <label>Documento</label>
+                <input type="text" value={editCliente.documento} onChange={(e) => setEditCliente({...editCliente, documento: e.target.value})} required className="input" />
+              </div>
+              <div className="form-group">
+                <label>E-mail</label>
+                <input type="email" value={editCliente.email} onChange={(e) => setEditCliente({...editCliente, email: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>WhatsApp</label>
+                <input type="text" value={editCliente.whatsapp} onChange={(e) => setEditCliente({...editCliente, whatsapp: e.target.value})} className="input" />
+              </div>
+              <button type="submit" className="btn btn-primary">Salvar Alterações</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edição Veículo */}
+      {editVeiculo && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Editar Veículo</h3>
+              <button className="close-btn" onClick={() => setEditVeiculo(null)}>✕</button>
+            </div>
+            <form onSubmit={handleEditVeiculoSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label>Placa</label>
+                <input type="text" value={editVeiculo.placa} onChange={(e) => setEditVeiculo({...editVeiculo, placa: e.target.value})} required className="input" />
+              </div>
+              <div className="form-group">
+                <label>Marca</label>
+                <input type="text" value={editVeiculo.marca} onChange={(e) => setEditVeiculo({...editVeiculo, marca: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Modelo</label>
+                <input type="text" value={editVeiculo.modelo} onChange={(e) => setEditVeiculo({...editVeiculo, modelo: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Cor</label>
+                <input type="text" value={editVeiculo.cor} onChange={(e) => setEditVeiculo({...editVeiculo, cor: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Ano</label>
+                <input type="text" value={editVeiculo.ano} onChange={(e) => setEditVeiculo({...editVeiculo, ano: e.target.value})} className="input" />
+              </div>
+              <button type="submit" className="btn btn-primary">Salvar Veículo</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edição Equipamento */}
+      {editEquipamento && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Editar Equipamento</h3>
+              <button className="close-btn" onClick={() => setEditEquipamento(null)}>✕</button>
+            </div>
+            <form onSubmit={handleEditEquipamentoSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label>IMEI / Identificador</label>
+                <input type="text" value={editEquipamento.identificador} onChange={(e) => setEditEquipamento({...editEquipamento, identificador: e.target.value})} required className="input" />
+              </div>
+              <div className="form-group">
+                <label>ICCID (Chip)</label>
+                <input type="text" value={editEquipamento.iccid} onChange={(e) => setEditEquipamento({...editEquipamento, iccid: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Número da Linha</label>
+                <input type="text" value={editEquipamento.numeroLinha} onChange={(e) => setEditEquipamento({...editEquipamento, numeroLinha: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Operadora</label>
+                <input type="text" value={editEquipamento.operadora} onChange={(e) => setEditEquipamento({...editEquipamento, operadora: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Marca</label>
+                <input type="text" value={editEquipamento.marca} onChange={(e) => setEditEquipamento({...editEquipamento, marca: e.target.value})} className="input" />
+              </div>
+              <div className="form-group">
+                <label>Modelo</label>
+                <input type="text" value={editEquipamento.modelo} onChange={(e) => setEditEquipamento({...editEquipamento, modelo: e.target.value})} className="input" />
+              </div>
+              <button type="submit" className="btn btn-primary">Salvar Equipamento</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Criar Mensalidade Avulsa */}
+      {isMensalidadeModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Nova Mensalidade Avulsa</h2>
+              <button className="close-btn" onClick={() => setIsMensalidadeModalOpen(false)}>×</button>
+            </div>
+            <form onSubmit={handleCreateMensalidade} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label>Cliente</label>
+                <select value={newMensalidade.clienteId} onChange={(e) => setNewMensalidade({...newMensalidade, clienteId: e.target.value})} className="input" required>
+                  <option value="">Selecione o Cliente</option>
+                  {clientes.filter(c => c.ativo).map(c => (
+                    <option key={c._id} value={c._id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Valor (R$)</label>
+                <input type="number" step="0.01" value={newMensalidade.valor} onChange={(e) => setNewMensalidade({...newMensalidade, valor: e.target.value})} className="input" required />
+              </div>
+              <div className="form-group">
+                <label>Vencimento</label>
+                <input type="date" value={newMensalidade.dataVencimento} onChange={(e) => setNewMensalidade({...newMensalidade, dataVencimento: e.target.value})} className="input" required />
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select value={newMensalidade.status} onChange={(e) => setNewMensalidade({...newMensalidade, status: e.target.value})} className="input">
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="PAGO">Pago</option>
+                  <option value="ATRASADO">Atrasado</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary">Gerar Mensalidade</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Mensalidade */}
+      {editMensalidade && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Editar Mensalidade</h2>
+              <button className="close-btn" onClick={() => setEditMensalidade(null)}>×</button>
+            </div>
+            <form onSubmit={handleEditMensalidadeSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group">
+                <label>Valor (R$)</label>
+                <input type="number" step="0.01" value={editMensalidade.valor} onChange={(e) => setEditMensalidade({...editMensalidade, valor: Number(e.target.value)})} className="input" required />
+              </div>
+              <div className="form-group">
+                <label>Vencimento</label>
+                <input type="date" value={editMensalidade.dataVencimento ? editMensalidade.dataVencimento.split('T')[0] : ''} onChange={(e) => setEditMensalidade({...editMensalidade, dataVencimento: e.target.value})} className="input" required />
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select value={editMensalidade.status} onChange={(e) => setEditMensalidade({...editMensalidade, status: e.target.value})} className="input">
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="PAGO">Pago</option>
+                  <option value="ATRASADO">Atrasado</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary">Salvar Mensalidade</button>
+            </form>
           </div>
         </div>
       )}

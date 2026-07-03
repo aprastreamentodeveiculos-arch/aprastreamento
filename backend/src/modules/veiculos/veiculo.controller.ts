@@ -96,3 +96,43 @@ export const bulkCreate = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Erro ao cadastrar frota em massa', error: error.message });
   }
 };
+import { Request, Response } from 'express';
+import { Veiculo } from './veiculo.model';
+
+export const updateVeiculo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { placa, marca, modelo, cor, ano, chassi, renavam } = req.body;
+
+    const veiculo = await Veiculo.findByIdAndUpdate(
+      id,
+      { placa, marca, modelo, cor, ano, chassi, renavam },
+      { new: true }
+    );
+
+    if (!veiculo) {
+      return res.status(404).json({ message: 'Veículo não encontrado' });
+    }
+
+    res.status(200).json(veiculo);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao atualizar veículo', error: error.message });
+  }
+};
+
+export const deleteVeiculo = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Além de excluir o veículo, idealmente deveríamos registrar no Histórico que o rastreador (se houver) foi desinstalado, mas para não quebrar a lógica atual, faremos a exclusão física do veículo.
+    const veiculo = await Veiculo.findByIdAndDelete(id);
+
+    if (!veiculo) {
+      return res.status(404).json({ message: 'Veículo não encontrado' });
+    }
+
+    res.status(200).json({ message: 'Veículo excluído com sucesso' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao excluir veículo', error: error.message });
+  }
+};

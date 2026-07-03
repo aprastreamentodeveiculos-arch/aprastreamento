@@ -160,3 +160,74 @@ export const rodarFaturamentoAutomatico = async (req: Request, res: Response): P
     res.status(500).json({ error: 'Erro ao rodar faturamento automático.', details: error.message });
   }
 };
+
+export const createMensalidadeAvulsa = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { clienteId, valor, dataVencimento, status, observacao } = req.body;
+
+    if (!clienteId || !valor || !dataVencimento) {
+      res.status(400).json({ error: 'Cliente, valor e data de vencimento são obrigatórios.' });
+      return;
+    }
+
+    const cliente = await Cliente.findById(clienteId);
+    if (!cliente) {
+      res.status(404).json({ error: 'Cliente não encontrado.' });
+      return;
+    }
+
+    const novaMensalidade = new Mensalidade({
+      clienteId,
+      dataVencimento: new Date(dataVencimento),
+      dataEmissao: new Date(),
+      valor,
+      status: status || 'PENDENTE',
+      observacao: observacao || 'Mensalidade Avulsa'
+    });
+
+    await novaMensalidade.save();
+
+    res.status(201).json(novaMensalidade);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Erro ao criar mensalidade avulsa.', details: error.message });
+  }
+};
+
+export const updateMensalidade = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { valor, dataVencimento, status, observacao } = req.body;
+
+    const mensalidade = await Mensalidade.findByIdAndUpdate(
+      id,
+      { valor, dataVencimento, status, observacao },
+      { new: true }
+    );
+
+    if (!mensalidade) {
+      res.status(404).json({ message: 'Mensalidade não encontrada' });
+      return;
+    }
+
+    res.status(200).json(mensalidade);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao atualizar mensalidade', error: error.message });
+  }
+};
+
+export const deleteMensalidade = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    const mensalidade = await Mensalidade.findByIdAndDelete(id);
+
+    if (!mensalidade) {
+      res.status(404).json({ message: 'Mensalidade não encontrada' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Mensalidade excluída com sucesso' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao excluir mensalidade', error: error.message });
+  }
+};

@@ -178,6 +178,8 @@ export const api = {
     },
     create: (data: Partial<Cliente> & { veiculos?: any[] }): Promise<Cliente> => 
       request('/clientes', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Cliente>): Promise<Cliente> =>
+      request(`/clientes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     panorama: (id: string): Promise<{
       cliente: Cliente;
       veiculos: any[];
@@ -200,6 +202,8 @@ export const api = {
     list: (): Promise<Equipamento[]> => request('/equipamentos'),
     create: (data: Partial<Equipamento>): Promise<Equipamento> => 
       request('/equipamentos', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Equipamento>): Promise<Equipamento> =>
+      request(`/equipamentos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     transfer: (id: string, tecnicoId: string | null): Promise<any> => 
       request(`/equipamentos/${id}/transferir`, { 
         method: 'PUT', 
@@ -209,13 +213,17 @@ export const api = {
       request(`/equipamentos/${id}/status`, {
         method: 'PUT',
         body: JSON.stringify({ status })
-      })
+      }),
+    delete: (id: string): Promise<any> => request(`/equipamentos/${id}`, { method: 'DELETE' })
   },
 
   // Veículos
   veiculos: {
     bulkCreate: (data: { clienteId: string, veiculos: any[] }) =>
-      request('/veiculos/bulk', { method: 'POST', body: JSON.stringify(data) })
+      request('/veiculos/bulk', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<any>): Promise<any> =>
+      request(`/veiculos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<any> => request(`/veiculos/${id}`, { method: 'DELETE' })
   },
 
   // Ordens de Serviço
@@ -266,7 +274,10 @@ export const api = {
     },
     baixar: (id: string): Promise<any> => request(`/financeiro/${id}/baixar`, { method: 'PUT' }),
     faturarCron: (): Promise<{ message: string; faturasGeradas: number }> => 
-      request('/financeiro/faturamento-cron', { method: 'POST' })
+      request('/financeiro/faturamento-cron', { method: 'POST' }),
+    createAvulsa: (data: any): Promise<any> => request('/financeiro/mensalidades', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'DELETE' })
   },
 
   // Caixa (Despesas e Categorias)

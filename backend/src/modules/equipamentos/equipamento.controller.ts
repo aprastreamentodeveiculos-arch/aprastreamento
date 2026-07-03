@@ -81,3 +81,41 @@ export const transferToTecnico = async (req: Request, res: Response): Promise<vo
     res.status(500).json({ error: 'Erro ao transferir equipamento.', details: error.message });
   }
 };
+
+export const updateEquipamento = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { identificador, iccid, numeroLinha, operadora, apn, marca, modelo } = req.body;
+
+    const equipamento = await Equipamento.findByIdAndUpdate(
+      id,
+      { identificador, iccid, numeroLinha, operadora, apn, marca, modelo },
+      { new: true }
+    );
+
+    if (!equipamento) {
+      res.status(404).json({ message: 'Equipamento não encontrado' });
+      return;
+    }
+
+    res.status(200).json(equipamento);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao atualizar equipamento', error: error.message });
+  }
+};
+
+export const deleteEquipamento = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const equipamento = await Equipamento.findByIdAndDelete(id);
+
+    if (!equipamento) {
+      res.status(404).json({ message: 'Equipamento não encontrado' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Equipamento excluído com sucesso' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao excluir equipamento', error: error.message });
+  }
+};

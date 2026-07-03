@@ -5,5 +5,7 @@ const router = Router();
 
 // Rota de Inserção de Frota Rápida
 router.post('/bulk', veiculoController.bulkCreate);
+router.put('/:id', veiculoController.updateVeiculo);
+router.delete('/:id', veiculoController.deleteVeiculo);
 
 export default router;
