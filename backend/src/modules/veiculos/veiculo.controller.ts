@@ -96,13 +96,11 @@ export const bulkCreate = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Erro ao cadastrar frota em massa', error: error.message });
   }
 };
-import { Request, Response } from 'express';
-import { Veiculo } from './veiculo.model';
 
 export const updateVeiculo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { placa, marca, modelo, cor, ano, chassi, renavam } = req.body;
+    const { placa, marca, modelo, cor, ano, chassi, renavam, rastreadorId } = req.body;
 
     const veiculo = await Veiculo.findByIdAndUpdate(
       id,
@@ -112,6 +110,48 @@ export const updateVeiculo = async (req: Request, res: Response) => {
 
     if (!veiculo) {
       return res.status(404).json({ message: 'Veículo não encontrado' });
+    }
+
+    // Lógica para troca/associação de rastreador
+    if (rastreadorId !== undefined) {
+      const activeInst = await HistoricoInstalacao.findOne({
+        veiculoId: id,
+        dataDesinstalacao: { $exists: false }
+      });
+
+      if (!rastreadorId) {
+        // Remover rastreador atual
+        if (activeInst) {
+          activeInst.dataDesinstalacao = new Date();
+          await activeInst.save();
+          await Equipamento.findByIdAndUpdate(activeInst.rastreadorId, { status: 'ESTOQUE' });
+        }
+      } else {
+        // Designar novo rastreador
+        if (!activeInst || activeInst.rastreadorId.toString() !== rastreadorId) {
+          // Encerrar o antigo se houver
+          if (activeInst) {
+            activeInst.dataDesinstalacao = new Date();
+            await activeInst.save();
+            await Equipamento.findByIdAndUpdate(activeInst.rastreadorId, { status: 'ESTOQUE' });
+          }
+
+          let tecnicoSistema = await Tecnico.findOne({ nome: 'SISTEMA EDIÇÃO' });
+          if (!tecnicoSistema) {
+            tecnicoSistema = await Tecnico.create({ nome: 'SISTEMA EDIÇÃO', ativo: true });
+          }
+
+          await HistoricoInstalacao.create({
+            veiculoId: id,
+            rastreadorId: rastreadorId,
+            tecnicoId: tecnicoSistema._id,
+            dataInstalacao: new Date(),
+            observacao: 'Troca/Designação manual pelo painel de Edição de Veículo'
+          });
+
+          await Equipamento.findByIdAndUpdate(rastreadorId, { status: 'INSTALADO' });
+        }
+      }
     }
 
     res.status(200).json(veiculo);

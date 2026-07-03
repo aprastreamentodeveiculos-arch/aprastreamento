@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
+import { maskCpfCnpj, maskTelefone, maskPlaca, maskCurrency, unmaskCurrency } from './utils/masks';
 
 function App() {
   // Controle de Visualização e Perfis
@@ -795,7 +796,8 @@ function App() {
         marca: editVeiculo.marca,
         modelo: editVeiculo.modelo,
         cor: editVeiculo.cor,
-        ano: editVeiculo.ano
+        ano: editVeiculo.ano,
+        rastreadorId: editVeiculo.rastreadorId
       });
       alert('Veículo atualizado com sucesso!');
       setEditVeiculo(null);
@@ -1328,7 +1330,7 @@ function App() {
                     type="text"
                     placeholder="Ex: 00.000.000/0001-00"
                     value={newCliente.documento}
-                    onChange={(e) => setNewCliente({ ...newCliente, documento: e.target.value })}
+                    onChange={(e) => setNewCliente({ ...newCliente, documento: maskCpfCnpj(e.target.value) })}
                     required
                   />
                 </div>
@@ -1347,7 +1349,7 @@ function App() {
                     type="text"
                     placeholder="Ex: (11) 99999-9999"
                     value={newCliente.whatsapp}
-                    onChange={(e) => setNewCliente({ ...newCliente, whatsapp: e.target.value })}
+                    onChange={(e) => setNewCliente({ ...newCliente, whatsapp: maskTelefone(e.target.value) })}
                   />
                 </div>
 
@@ -1660,7 +1662,7 @@ function App() {
                                   <button 
                                     className="btn btn-secondary" 
                                     style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-                                    onClick={() => setEditVeiculo(v)}
+                                    onClick={() => setEditVeiculo({...v, rastreadorId: instalacaoAtiva?.rastreadorId?._id || ''})}
                                   >
                                     ✎ Editar
                                   </button>
@@ -3478,7 +3480,7 @@ function App() {
               </div>
               <div className="form-group">
                 <label>Documento</label>
-                <input type="text" value={editCliente.documento} onChange={(e) => setEditCliente({...editCliente, documento: e.target.value})} required className="input" />
+                <input type="text" value={editCliente.documento} onChange={(e) => setEditCliente({...editCliente, documento: maskCpfCnpj(e.target.value)})} required className="input" />
               </div>
               <div className="form-group">
                 <label>E-mail</label>
@@ -3486,7 +3488,7 @@ function App() {
               </div>
               <div className="form-group">
                 <label>WhatsApp</label>
-                <input type="text" value={editCliente.whatsapp} onChange={(e) => setEditCliente({...editCliente, whatsapp: e.target.value})} className="input" />
+                <input type="text" value={editCliente.whatsapp} onChange={(e) => setEditCliente({...editCliente, whatsapp: maskTelefone(e.target.value)})} className="input" />
               </div>
               <button type="submit" className="btn btn-primary">Salvar Alterações</button>
             </form>
@@ -3505,7 +3507,7 @@ function App() {
             <form onSubmit={handleEditVeiculoSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
                 <label>Placa</label>
-                <input type="text" value={editVeiculo.placa} onChange={(e) => setEditVeiculo({...editVeiculo, placa: e.target.value})} required className="input" />
+                <input type="text" value={editVeiculo.placa} onChange={(e) => setEditVeiculo({...editVeiculo, placa: maskPlaca(e.target.value)})} required className="input" />
               </div>
               <div className="form-group">
                 <label>Marca</label>
@@ -3523,6 +3525,40 @@ function App() {
                 <label>Ano</label>
                 <input type="text" value={editVeiculo.ano} onChange={(e) => setEditVeiculo({...editVeiculo, ano: e.target.value})} className="input" />
               </div>
+              
+              <div className="form-group">
+                <label>Rastreador Instalado</label>
+                <select 
+                  value={editVeiculo.rastreadorId || ''} 
+                  onChange={(e) => setEditVeiculo({...editVeiculo, rastreadorId: e.target.value})}
+                  className="input"
+                >
+                  <option value="">Nenhum</option>
+                  {equipamentos
+                    .filter(eq => eq.status === 'ESTOQUE' || eq.status === 'COM_TECNICO' || eq._id === editVeiculo.rastreadorId)
+                    .map(eq => (
+                      <option key={eq._id} value={eq._id}>
+                        {eq.identificador} {eq._id === editVeiculo.rastreadorId ? '(Atual)' : ''}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              {editVeiculo.rastreadorId && (
+                <div style={{ background: 'var(--bg-deep)', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
+                  {(() => {
+                    const eq = equipamentos.find(e => e._id === editVeiculo.rastreadorId);
+                    if (eq) {
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          <div><strong>ICCID:</strong> <span style={{color: 'var(--primary)'}}>{eq.iccid || 'Não informado'}</span></div>
+                          <div><strong>Linha M2M:</strong> <span style={{color: 'var(--primary)'}}>{eq.numeroLinha || 'Não informado'}</span></div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
               <button type="submit" className="btn btn-primary">Salvar Veículo</button>
             </form>
           </div>
