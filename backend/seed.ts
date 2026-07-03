@@ -1,6 +1,7 @@
 // @ts-nocheck
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 
 // Importando todos os models
 import dns from 'dns';
@@ -20,6 +21,7 @@ import { Ticket } from './src/modules/tickets/ticket.model';
 import { CategoriaDespesa } from './src/modules/caixa/categoriaDespesa.model';
 import { Despesa } from './src/modules/caixa/despesa.model';
 import { Historico } from './src/modules/historico/historico.model';
+import { Usuario } from './src/modules/usuarios/usuario.model';
 
 dotenv.config();
 
@@ -43,6 +45,17 @@ const runSeed = async () => {
     }
     
     console.log('Banco de dados completamente apagado!');
+
+    // 1.5. Criar Usuario Admin Padrão
+    const adminHash = await bcrypt.hash('123456', 10);
+    await Usuario.create({
+      nome: 'Administrador Supremo',
+      email: 'admin@aprastro.com',
+      senhaHash: adminHash,
+      role: 'admin',
+      ativo: true
+    });
+    console.log('Usuário Admin criado (admin@aprastro.com / 123456).');
 
     // 2. Criar Plano Padrão
     const plano = await Plano.create({

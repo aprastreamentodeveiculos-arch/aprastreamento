@@ -128,9 +128,16 @@ export interface Ticket {
 // Funções de requisição genéricas
 async function request(url: string, options?: RequestInit) {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('aprastro_token') : null;
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+      authHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE}${url}`, {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...(options?.headers || {})
       },
       ...options
@@ -158,6 +165,19 @@ async function request(url: string, options?: RequestInit) {
 
 // Serviços expostos
 export const api = {
+  // Auth
+  auth: {
+    login: (data: any) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) })
+  },
+  
+  // Usuarios
+  usuarios: {
+    list: () => request('/usuarios'),
+    create: (data: any) => request('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any) => request(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request(`/usuarios/${id}`, { method: 'DELETE' })
+  },
+
   // Planos
   planos: {
     list: (filtros?: { apenasAtivos?: boolean }): Promise<Plano[]> => {

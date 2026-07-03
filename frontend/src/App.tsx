@@ -1,14 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { Login } from './components/Login';
+import { GestaoUsuarios } from './components/GestaoUsuarios';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
 
 function App() {
-  // Controle de Visualização e Perfis
+  // Controle de Visualização, Autenticação e Perfis
+  const [token, setToken] = useState<string | null>(typeof window !== 'undefined' ? localStorage.getItem('aprastro_token') : null);
   const [userRole, setUserRole] = useState<'admin' | 'tecnico'>('admin');
+  const [userName, setUserName] = useState<string>('Usuário');
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
-  const [userName, setUserName] = useState<string>('Andrew Gerente');
+
+  useEffect(() => {
+    const savedUser = typeof window !== 'undefined' ? localStorage.getItem('aprastro_user') : null;
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        setUserRole(parsed.role || 'tecnico');
+        setUserName(parsed.nome || 'Usuário');
+      } catch(e){}
+    }
+  }, [token]);
+
+  const handleLogin = (newToken: string, user: any) => {
+    localStorage.setItem('aprastro_token', newToken);
+    localStorage.setItem('aprastro_user', JSON.stringify(user));
+    setToken(newToken);
+    setUserRole(user.role);
+    setUserName(user.nome);
+    setCurrentPage(user.role === 'admin' ? 'dashboard' : 'tecnico-caixa');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('aprastro_token');
+    localStorage.removeItem('aprastro_user');
+    setToken(null);
+    setCurrentPage('dashboard');
+  };
 
   // Estados dos Planos
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -897,6 +927,10 @@ function App() {
     return 'purple';
   };
 
+  if (!token) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app-container">
       {/* Header Mobile de Topo */}
@@ -933,18 +967,12 @@ function App() {
 
       {/* Visualização de Conteúdo Principal */}
       <main className="main-content">
-        {/* Barra superior de simulação */}
+        {/* Barra superior de simulação e logout */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-          <div className="profile-simulator">
-            <span>Acesso:</span>
-            <select
-              value={userRole}
-              onChange={(e) => setUserRole(e.target.value as 'admin' | 'tecnico')}
-            >
-              <option value="admin">Administrador (Ver Painel Completo)</option>
-              <option value="tecnico">Técnico Instalador (Ver Painel Mobile)</option>
-            </select>
-          </div>
+          <button className="btn btn-secondary" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-deep)', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Sair do Sistema
+          </button>
         </div>
 
         {/* --- PÁGINA: DASHBOARD ADMIN --- */}
@@ -2985,6 +3013,11 @@ function App() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* --- PÁGINA: GESTÃO DE USUÁRIOS --- */}
+        {currentPage === 'usuarios' && userRole === 'admin' && (
+          <GestaoUsuarios />
         )}
 
         {/* --- PÁGINA: HISTÓRICO CRUZADO --- */}

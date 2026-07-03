@@ -77,6 +77,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <button
               onClick={() => {
+                setCurrentPage('usuarios');
+                onClose();
+              }}
+              className={`sidebar-item ${currentPage === 'usuarios' ? 'active' : ''}`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="11" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Gestão de Usuários
+            </button>
+
+            <button
+              onClick={() => {
                 setCurrentPage('clientes');
                 onClose();
               }}
@@ -230,7 +245,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </div>
         </div>
-        <button className="logout-btn" title="Sair do sistema" onClick={() => alert('Simulação de logout...')}>
+        <button className="logout-btn" title="Sair do sistema" onClick={() => {
+          if (confirm('Deseja realmente sair?')) {
+            localStorage.removeItem('aprastro_token');
+            localStorage.removeItem('aprastro_user');
+            window.location.reload();
+          }
+        }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
