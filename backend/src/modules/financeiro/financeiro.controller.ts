@@ -193,6 +193,95 @@ export const createMensalidadeAvulsa = async (req: Request, res: Response): Prom
   }
 };
 
+export const checkoutMensalidade = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { desconto, acrescimo, valorPago, formaPagamento, novaDataVencimento } = req.body;
+
+    const mensalidade = await Mensalidade.findById(id);
+    if (!mensalidade) {
+      res.status(404).json({ message: 'Mensalidade não encontrada' });
+      return;
+    }
+
+    if (mensalidade.status === 'PAGO') {
+      res.status(400).json({ message: 'Mensalidade já está paga.' });
+      return;
+    }
+
+    const valorOriginal = Number(mensalidade.valor) || 0;
+    const numDesconto = Number(desconto) || 0;
+    const numAcrescimo = Number(acrescimo) || 0;
+    const numPago = Number(valorPago) || 0;
+
+    const totalDevido = valorOriginal + numAcrescimo - numDesconto;
+    const protocoloId = `PGT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    const dataHoje = new Date();
+    const observacaoPagamento = `Pagou R$ ${numPago.toFixed(2)} dia ${dataHoje.toLocaleDateString('pt-BR')} via ${formaPagamento}.`;
+
+    if (numPago >= totalDevido) {
+      // Pagamento Total
+      mensalidade.status = 'PAGO';
+      mensalidade.desconto = numDesconto;
+      mensalidade.acrescimo = numAcrescimo;
+      mensalidade.valorPago = numPago;
+      mensalidade.formaPagamento = formaPagamento;
+      mensalidade.protocolo = protocoloId;
+      mensalidade.dataPagamento = dataHoje;
+      mensalidade.detalhes = mensalidade.detalhes ? `${mensalidade.detalhes} | ${observacaoPagamento}` : observacaoPagamento;
+      
+      await mensalidade.save();
+      res.status(200).json({ message: 'Pagamento total registrado.', mensalidade });
+    } else if (numPago > 0 && numPago < totalDevido) {
+      // Pagamento Parcial
+      const valorRestante = totalDevido - numPago;
+
+      // 1. Marca a mensalidade atual como "PARCIAL" ou "PAGO" (O usuário pediu para marcar como PAGO/Resolvido ou manter um histórico)
+      // O modelo já tem enum 'PARCIAL', usaremos 'PARCIAL' para indicar que foi paga parcialmente, mas finalizada nesta instância.
+      mensalidade.status = 'PARCIAL';
+      mensalidade.desconto = numDesconto;
+      mensalidade.acrescimo = numAcrescimo;
+      mensalidade.valorPago = numPago;
+      mensalidade.formaPagamento = formaPagamento;
+      mensalidade.protocolo = protocoloId;
+      mensalidade.dataPagamento = dataHoje;
+      const obsResidual = `Restante (R$ ${valorRestante.toFixed(2)}) gerado para dia ${new Date(novaDataVencimento).toLocaleDateString('pt-BR')}.`;
+      mensalidade.detalhes = mensalidade.detalhes ? `${mensalidade.detalhes} | ${observacaoPagamento} ${obsResidual}` : `${observacaoPagamento} ${obsResidual}`;
+      
+      await mensalidade.save();
+
+      // 2. Cria a nova fatura residual
+      if (!novaDataVencimento) {
+        res.status(400).json({ message: 'Nova data de vencimento é obrigatória para pagamentos parciais.' });
+        return;
+      }
+
+      const novaMensalidade = new Mensalidade({
+        clienteId: mensalidade.clienteId,
+        dataVencimento: new Date(novaDataVencimento),
+        dataEmissao: dataHoje,
+        valor: valorRestante,
+        status: 'PENDENTE',
+        detalhes: `Fatura residual originada da fatura parcialmente paga (Protocolo ${protocoloId}).`
+      });
+
+      await novaMensalidade.save();
+
+      res.status(200).json({ 
+        message: 'Pagamento parcial registrado. Nova fatura residual gerada com sucesso.', 
+        mensalidadeOrigem: mensalidade, 
+        mensalidadeNova: novaMensalidade 
+      });
+    } else {
+      res.status(400).json({ message: 'Valor pago inválido.' });
+    }
+
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao processar checkout.', error: error.message });
+  }
+};
+
 export const updateMensalidade = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;

@@ -293,6 +293,7 @@ export const api = {
       return request(`/financeiro${query}`);
     },
     baixar: (id: string): Promise<any> => request(`/financeiro/${id}/baixar`, { method: 'PUT' }),
+    checkout: (id: string, data: any): Promise<any> => request(`/financeiro/${id}/checkout`, { method: 'POST', body: JSON.stringify(data) }),
     faturarCron: (): Promise<{ message: string; faturasGeradas: number }> => 
       request('/financeiro/faturamento-cron', { method: 'POST' }),
     createAvulsa: (data: any): Promise<any> => request('/financeiro/mensalidades', { method: 'POST', body: JSON.stringify(data) }),

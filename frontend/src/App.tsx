@@ -125,6 +125,14 @@ function App() {
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
   const [isMensalidadeModalOpen, setIsMensalidadeModalOpen] = useState(false);
   const [editMensalidade, setEditMensalidade] = useState<any>(null);
+  const [checkoutMensalidadeId, setCheckoutMensalidadeId] = useState<any>(null);
+  const [checkoutData, setCheckoutData] = useState({
+    desconto: 0,
+    acrescimo: 0,
+    valorPago: 0,
+    formaPagamento: 'PIX',
+    novaDataVencimento: ''
+  });
   const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
 
   // Estados dos formulários de cadastro
@@ -584,20 +592,6 @@ function App() {
     }
   };
 
-  const handleBaixarMensalidadeFicha = async (id: string) => {
-    try {
-      await api.financeiro.baixar(id);
-      alert('Baixa de mensalidade registrada com sucesso!');
-      carregarDados();
-      if (selectedClientePanorama) {
-        const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
-        setSelectedClientePanorama(panorama);
-      }
-    } catch (err: any) {
-      alert('Erro ao dar baixa manual na fatura: ' + err.message);
-    }
-  };
-
   // Admin aprova O.S.
   const handleApproveOS = async (osId: string) => {
     try {
@@ -663,14 +657,32 @@ function App() {
     }
   };
 
-  // Admin dá baixa na mensalidade
-  const handleBaixarMensalidade = async (id: string) => {
+  const handleOpenCheckout = (m: any) => {
+    setCheckoutMensalidadeId(m);
+    setCheckoutData({
+      desconto: 0,
+      acrescimo: 0,
+      valorPago: m.valor,
+      formaPagamento: 'PIX',
+      novaDataVencimento: ''
+    });
+  };
+
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!checkoutMensalidadeId) return;
     try {
-      await api.financeiro.baixar(id);
-      alert('Baixa de mensalidade registrada com sucesso!');
+      const res = await api.financeiro.checkout(checkoutMensalidadeId._id, checkoutData);
+      alert('Checkout processado com sucesso! Protocolo: ' + (res.mensalidade?.protocolo || res.mensalidadeOrigem?.protocolo));
+      setCheckoutMensalidadeId(null);
       carregarDados();
+      // If we are in Ficha do Cliente, reload panorama
+      if (selectedClientePanorama) {
+        const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
+        setSelectedClientePanorama(panorama);
+      }
     } catch (err: any) {
-      alert('Erro ao dar baixa manual: ' + err.message);
+      alert('Erro no checkout: ' + err.message);
     }
   };
 
@@ -1815,9 +1827,9 @@ function App() {
                                 <button 
                                   className="btn btn-secondary" 
                                   style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
-                                  onClick={() => handleBaixarMensalidadeFicha(m._id)}
+                                  onClick={() => handleOpenCheckout(m)}
                                 >
-                                  Confirmar Recebimento
+                                  💳 Pagar / Checkout
                                 </button>
                               )}
                             </td>
@@ -2581,8 +2593,8 @@ function App() {
                           <td>
                             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                               {m.status !== 'PAGO' && (
-                                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleBaixarMensalidade(m._id)}>
-                                  ✓ Pagar
+                                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleOpenCheckout(m)}>
+                                  💳 Pagar
                                 </button>
                               )}
                               <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
@@ -3703,6 +3715,91 @@ function App() {
                 </select>
               </div>
               <button type="submit" className="btn btn-primary">Salvar Mensalidade</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Checkout Mensalidade */}
+      {checkoutMensalidadeId && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '550px' }}>
+            <div className="modal-header">
+              <h2>Checkout de Pagamento</h2>
+              <button className="close-btn" onClick={() => setCheckoutMensalidadeId(null)}>×</button>
+            </div>
+            <form onSubmit={handleCheckoutSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ background: 'var(--bg-deep)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Fatura Original:</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>R$ {Number(checkoutMensalidadeId.valor).toFixed(2)}</span>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Desconto (R$)</label>
+                  <input type="number" step="0.01" min="0" value={checkoutData.desconto} onChange={(e) => setCheckoutData({...checkoutData, desconto: Number(e.target.value)})} className="input" />
+                </div>
+                <div className="form-group">
+                  <label>Juros/Multa (R$)</label>
+                  <input type="number" step="0.01" min="0" value={checkoutData.acrescimo} onChange={(e) => setCheckoutData({...checkoutData, acrescimo: Number(e.target.value)})} className="input" />
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(0, 240, 255, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>Total Devido:</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>
+                  R$ {(Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label>Forma de Pagamento</label>
+                <select value={checkoutData.formaPagamento} onChange={(e) => setCheckoutData({...checkoutData, formaPagamento: e.target.value})} className="input" required>
+                  <option value="PIX">PIX</option>
+                  <option value="DINHEIRO">Dinheiro Espécie</option>
+                  <option value="CARTÃO DE CRÉDITO">Cartão de Crédito</option>
+                  <option value="CARTÃO DE DÉBITO">Cartão de Débito</option>
+                  <option value="BOLETO BANCÁRIO">Boleto Bancário</option>
+                  <option value="TED/DOC">Transferência TED/DOC</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ color: 'var(--success)' }}>Valor Recebido Agora (R$)</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01"
+                  value={checkoutData.valorPago} 
+                  onChange={(e) => setCheckoutData({...checkoutData, valorPago: Number(e.target.value)})} 
+                  className="input" 
+                  style={{ borderColor: 'var(--success)', fontSize: '1.2rem' }}
+                  required 
+                />
+              </div>
+
+              {checkoutData.valorPago > 0 && checkoutData.valorPago < (Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto) && (
+                <div style={{ background: 'rgba(255, 0, 60, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--danger)', marginTop: '0.5rem' }}>
+                  <p style={{ color: 'var(--danger)', marginBottom: '0.5rem', fontWeight: 'bold' }}>Atenção: Pagamento Parcial Detectado</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '1rem' }}>
+                    O valor recebido é menor que o total. O sistema marcará esta fatura como Parcial e <strong>gerará automaticamente uma nova fatura</strong> com o saldo restante (R$ {((Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto) - checkoutData.valorPago).toFixed(2)}).
+                  </p>
+                  <div className="form-group">
+                    <label style={{ color: 'var(--text-main)' }}>Nova Data de Vencimento para o Restante</label>
+                    <input 
+                      type="date" 
+                      value={checkoutData.novaDataVencimento} 
+                      onChange={(e) => setCheckoutData({...checkoutData, novaDataVencimento: e.target.value})} 
+                      className="input" 
+                      required 
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+                Confirmar Pagamento e Gerar Protocolo
+              </button>
             </form>
           </div>
         </div>

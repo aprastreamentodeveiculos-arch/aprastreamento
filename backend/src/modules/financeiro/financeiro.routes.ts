@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { listMensalidades, baixarMensalidadeManual, rodarFaturamentoAutomatico, createMensalidadeAvulsa, updateMensalidade, deleteMensalidade } from './financeiro.controller';
+import { listMensalidades, baixarMensalidadeManual, checkoutMensalidade, rodarFaturamentoAutomatico, createMensalidadeAvulsa, updateMensalidade, deleteMensalidade } from './financeiro.controller';
 
 const router = Router();
 
@@ -9,5 +9,6 @@ router.post('/mensalidades', createMensalidadeAvulsa);
 router.put('/mensalidades/:id', updateMensalidade);
 router.delete('/mensalidades/:id', deleteMensalidade);
 router.put('/:id/baixar', baixarMensalidadeManual);
+router.post('/:id/checkout', checkoutMensalidade);
 
 export default router;
