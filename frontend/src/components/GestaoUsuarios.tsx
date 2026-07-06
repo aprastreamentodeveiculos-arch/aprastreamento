@@ -126,9 +126,11 @@ export const GestaoUsuarios: React.FC = () => {
                   <button className="btn btn-secondary" style={{ marginRight: '5px', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }} onClick={() => openModal(u)}>
                     Editar
                   </button>
-                  <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }} onClick={() => handleDelete(u._id)}>
-                    Excluir
-                  </button>
+                  {!(usuarios.filter(user => user.role === 'admin').length <= 1 && u.role === 'admin') && (
+                    <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem' }} onClick={() => handleDelete(u._id)}>
+                      Excluir
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

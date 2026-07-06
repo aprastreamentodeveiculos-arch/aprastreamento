@@ -214,7 +214,11 @@ export const api = {
   tecnicos: {
     list: (): Promise<Tecnico[]> => request('/tecnicos'),
     create: (data: Partial<Tecnico>): Promise<Tecnico> => 
-      request('/tecnicos', { method: 'POST', body: JSON.stringify(data) })
+      request('/tecnicos', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Tecnico>): Promise<Tecnico> =>
+      request('/tecnicos/' + id, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<void> =>
+      request('/tecnicos/' + id, { method: 'DELETE' })
   },
 
   // Equipamentos

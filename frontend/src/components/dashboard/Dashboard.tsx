@@ -1,6 +1,7 @@
-
 import { StatCard } from './StatCard';
 import type { Cliente } from '../../services/api';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState } from 'react';
 
 interface DashboardProps {
   totalReceitaEstimada: number;
@@ -27,12 +28,43 @@ interface DashboardProps {
 }
 
 export function Dashboard(props: DashboardProps) {
+  const [periodo, setPeriodo] = useState('trimestre');
+
+  const data = [
+    { name: 'Abril', Receitas: props.fluxoAbril.receita, Despesas: props.fluxoAbril.despesa },
+    { name: 'Maio', Receitas: props.fluxoMaio.receita, Despesas: props.fluxoMaio.despesa },
+    { name: 'Junho', Receitas: props.fluxoJunho.receita, Despesas: props.fluxoJunho.despesa },
+  ];
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="glass-panel" style={{ padding: '10px', borderRadius: '8px', background: 'rgba(10,11,13,0.9)' }}>
+          <p style={{ margin: '0 0 5px 0', color: '#fff' }}>{label}</p>
+          <p style={{ margin: 0, color: '#39FF14' }}>Receitas: R$ {payload[0].value.toFixed(2)}</p>
+          <p style={{ margin: 0, color: '#FF003C' }}>Despesas: R$ {payload[1].value.toFixed(2)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="dashboard-wrapper">
       <div className="view-header">
         <h1>Dashboard Operacional</h1>
         <div className="header-actions">
-           {/* Aqui no futuro entra o seletor de período do mockup e botões de exportação */}
+           <select 
+              value={periodo} 
+              onChange={(e) => setPeriodo(e.target.value)}
+              className="glass-panel"
+              style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', outline: 'none', cursor: 'pointer' }}
+           >
+             <option value="hoje">Hoje</option>
+             <option value="semana">Últimos 7 Dias</option>
+             <option value="mes">Este Mês</option>
+             <option value="trimestre">Último Trimestre</option>
+           </select>
         </div>
       </div>
 
@@ -72,8 +104,32 @@ export function Dashboard(props: DashboardProps) {
       </div>
 
       <div className="activity-section">
-        {/* Gráficos adicionais seriam componentes separados idealmente, mas mantemos por compatibilidade inicial */}
-        <div className="card glass-panel donut-chart-box">
+        <div className="card glass-panel" style={{ flex: 2 }}>
+          <h3>Evolução Financeira (Receitas x Despesas)</h3>
+          <div style={{ width: '100%', height: 300, marginTop: '20px' }}>
+            <ResponsiveContainer>
+              <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#39FF14" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#39FF14" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#FF003C" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#FF003C" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" stroke="#666" />
+                <YAxis stroke="#666" />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Receitas" stroke="#39FF14" fillOpacity={1} fill="url(#colorReceitas)" />
+                <Area type="monotone" dataKey="Despesas" stroke="#FF003C" fillOpacity={1} fill="url(#colorDespesas)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card glass-panel donut-chart-box" style={{ flex: 1 }}>
           <h3>Faturamento Mensal</h3>
           <div className="donut-chart-container">
             <svg className="donut-svg" width="150" height="150" viewBox="0 0 100 100">

@@ -1035,7 +1035,15 @@ function App() {
 
       {/* Visualização de Conteúdo Principal */}
       <main className="main-content">
-        <Topbar userName={userName} onLogout={handleLogout} />
+        <Topbar 
+          userName={userName} 
+          onLogout={handleLogout} 
+          clientes={clientes} 
+          ordens={ordens} 
+          handleAbrirFichaCliente={handleAbrirFichaCliente} 
+          setCurrentPage={setCurrentPage} 
+          toggleSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+        />
 
         {/* --- PÁGINA: DASHBOARD ADMIN --- */}
         {currentPage === 'dashboard' && (

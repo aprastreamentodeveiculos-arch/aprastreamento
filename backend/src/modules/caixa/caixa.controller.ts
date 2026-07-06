@@ -61,7 +61,8 @@ export const createDespesa = async (req: Request, res: Response): Promise<void> 
 export const listDespesas = async (req: Request, res: Response): Promise<void> => {
   try {
     const { busca, categoriaId, mes } = req.query;
-    const query: any = {};
+    // Query always filters out soft-deleted items unless explicitly asked (not implemented yet)
+    const query: any = { isDeleted: false };
 
     if (categoriaId) {
       query.categoriaId = categoriaId;
@@ -72,7 +73,6 @@ export const listDespesas = async (req: Request, res: Response): Promise<void> =
     }
 
     if (mes) {
-      // mes vem no formato "AAAA-MM"
       const [ano, mesStr] = (mes as string).split('-');
       const dataInicio = new Date(parseInt(ano), parseInt(mesStr) - 1, 1);
       const dataFim = new Date(parseInt(ano), parseInt(mesStr), 0, 23, 59, 59, 999);
@@ -83,7 +83,6 @@ export const listDespesas = async (req: Request, res: Response): Promise<void> =
       .populate('categoriaId', 'nome')
       .sort({ data: -1 });
 
-    // Calcular o total acumulado das despesas filtradas
     const totalAcumulado = despesas.reduce((sum, d) => sum + d.valor, 0);
 
     res.status(200).json({
@@ -93,5 +92,50 @@ export const listDespesas = async (req: Request, res: Response): Promise<void> =
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Erro ao listar despesas.', details: error.message });
+  }
+};
+
+export const updateDespesa = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { descricao, valor, data, categoriaId, editObs } = req.body;
+
+    const despesa = await Despesa.findByIdAndUpdate(
+      id, 
+      { descricao, valor, data: new Date(data), categoriaId, editObs }, 
+      { new: true }
+    );
+
+    if (!despesa) {
+      res.status(404).json({ error: 'Despesa não encontrada.' });
+      return;
+    }
+
+    res.status(200).json(despesa);
+  } catch (error: any) {
+    res.status(500).json({ error: 'Erro ao atualizar despesa.', details: error.message });
+  }
+};
+
+export const deleteDespesa = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { editObs } = req.body; // Motivo da exclusão
+    
+    // Soft delete implementation
+    const despesa = await Despesa.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date(), editObs },
+      { new: true }
+    );
+
+    if (!despesa) {
+      res.status(404).json({ error: 'Despesa não encontrada.' });
+      return;
+    }
+
+    res.status(200).json({ message: 'Despesa movida para a lixeira (retenção de 30 dias).' });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Erro ao excluir despesa.', details: error.message });
   }
 };
