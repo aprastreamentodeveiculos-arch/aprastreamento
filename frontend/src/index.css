@@ -75,7 +75,8 @@ body {
   position: relative;
 }
 
-.main-content.expanded { margin-left: 250px; }\n.main-content {
+.main-content.expanded { margin-left: 250px; }
+.main-content {
   flex: 1;
   padding: 2rem 2.5rem;
   margin-left: var(--sidebar-width);
