@@ -68,6 +68,7 @@ function App() {
   const [supportMailtoUrl, setSupportMailtoUrl] = useState<string>('');
   const [supportError, setSupportError] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState<boolean>(false);
 
   const handleSendTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +139,7 @@ function App() {
   });
   const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
   const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
+  const [selectedMensalidadesGeraisIds, setSelectedMensalidadesGeraisIds] = useState<string[]>([]);
 
   // --- MÁSCARAS DE INPUT ---
   // @ts-ignore
@@ -694,6 +696,21 @@ function App() {
     }
   };
 
+  
+  const handleBulkCheckout = async () => {
+    if (selectedMensalidadesGeraisIds.length === 0) return;
+    if (confirm(`Confirmar baixa (pagamento) de ${selectedMensalidadesGeraisIds.length} fatura(s)?`)) {
+      try {
+        await api.financeiro.bulkCheckout(selectedMensalidadesGeraisIds, 'Massa');
+        alert('Faturas baixadas com sucesso!');
+        setSelectedMensalidadesGeraisIds([]);
+        carregarDados();
+      } catch (err: any) {
+        alert('Erro ao dar baixa nas faturas: ' + err.message);
+      }
+    }
+  };
+
   const handleBulkDeleteMensalidades = async () => {
     if (selectedMensalidadesIds.length === 0) return;
     if (!window.confirm(`Tem certeza que deseja excluir as ${selectedMensalidadesIds.length} mensalidades selecionadas?`)) return;
@@ -1029,12 +1046,13 @@ function App() {
         userRole={userRole}
         selectedOSId={selectedOSId}
         isOpen={isMobileMenuOpen}
+        isDesktopExpanded={isDesktopSidebarExpanded}
         onClose={() => setIsMobileMenuOpen(false)}
         
       />
 
       {/* Visualização de Conteúdo Principal */}
-      <main className="main-content">
+      <main className={`main-content ${isDesktopSidebarExpanded ? 'expanded' : ''}`}>
         <Topbar 
           userName={userName} 
           onLogout={handleLogout} 
@@ -1042,7 +1060,7 @@ function App() {
           ordens={ordens} 
           handleAbrirFichaCliente={handleAbrirFichaCliente} 
           setCurrentPage={setCurrentPage} 
-          toggleSidebar={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          toggleSidebar={() => { if(window.innerWidth > 992) { setIsDesktopSidebarExpanded(!isDesktopSidebarExpanded); } else { setIsMobileMenuOpen(!isMobileMenuOpen); } }} 
         />
 
         {/* --- PÁGINA: DASHBOARD ADMIN --- */}
@@ -2410,6 +2428,16 @@ function App() {
                     )}
                   </div>
                 </div>
+                {selectedMensalidadesGeraisIds.length > 0 && (
+                  <div style={{ background: 'var(--bg-deep)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>
+                      {selectedMensalidadesGeraisIds.length} fatura(s) selecionada(s)
+                    </span>
+                    <button className="btn btn-primary" onClick={handleBulkCheckout}>
+                      Dar Baixa Selecionadas
+                    </button>
+                  </div>
+                )}
                 <div className="table-container">
                   <table>
                     <thead>
@@ -2433,6 +2461,14 @@ function App() {
                         })
                         .map(m => (
                         <tr key={m._id}>
+                          <td>
+                            {m.status !== 'PAGO' && (
+                              <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
+                                if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
+                                else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
+                              }} />
+                            )}
+                          </td>
                           <td>
                             <div className="customer-cell">
                               <div className={`customer-avatar ${getAvatarColor(m.clienteId?._id || '1')}`}>

@@ -340,3 +340,30 @@ export const bulkDeleteMensalidades = async (req: Request, res: Response): Promi
     res.status(500).json({ message: 'Erro ao excluir mensalidades em lote', error: error.message });
   }
 };
+
+
+export const bulkCheckoutMensalidades = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { ids, formaPagamento } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: 'Nenhum ID de mensalidade fornecido.' });
+      return;
+    }
+
+    const hoje = new Date();
+    await Mensalidade.updateMany(
+      { _id: { $in: ids }, status: { $ne: 'PAGO' } },
+      { 
+        $set: { 
+          status: 'PAGO', 
+          dataPagamento: hoje, 
+          formaPagamento: formaPagamento || 'Massa' 
+        } 
+      }
+    );
+
+    res.status(200).json({ message: `${ids.length} faturas liquidadas com sucesso.` });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Erro ao liquidar faturas em massa.', details: error.message });
+  }
+};

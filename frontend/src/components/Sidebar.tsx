@@ -7,6 +7,7 @@ interface SidebarProps {
   userRole: 'admin' | 'tecnico';
   selectedOSId?: string;
   isOpen: boolean;
+  isDesktopExpanded?: boolean;
   onClose: () => void;
 }
 

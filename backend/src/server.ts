@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { startBillingCron } from './modules/financeiro/billing.service';
 import app from './app';
 import { connectDatabase } from './config/db';
 import { OrdemServico } from './modules/ordens/ordem.model';
@@ -27,7 +28,9 @@ const startServer = async () => {
     }
 
     // Iniciar o servidor Express
-    app.listen(PORT, () => {
+    startBillingCron();
+
+app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando em: http://localhost:${PORT}`);
     });
   } catch (error) {

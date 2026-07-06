@@ -303,7 +303,8 @@ export const api = {
     createAvulsa: (data: any): Promise<any> => request('/financeiro/mensalidades', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'DELETE' }),
-    bulkDelete: (ids: string[]): Promise<any> => request('/financeiro/mensalidades/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) })
+    bulkDelete: (ids: string[]): Promise<any> => request('/financeiro/mensalidades/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+    bulkCheckout: (ids: string[], formaPagamento: string): Promise<any> => request('/financeiro/mensalidades/bulk-checkout', { method: 'POST', body: JSON.stringify({ ids, formaPagamento }) })
   },
 
   // Caixa (Despesas e Categorias)
