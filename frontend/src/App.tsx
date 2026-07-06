@@ -349,7 +349,7 @@ function App() {
     return acc + valorCliente;
   }, 0); 
   const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
-  const lucroReal = mensalidades.filter(m => m.status === 'PAGO').reduce((acc, m) => acc + m.valor, 0) - totalDespesas;
+  const lucroReal = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0) - totalDespesas;
 
   // Filtrar dados por mês (Abril, Maio, Junho de 2026) para o gráfico de fluxo de caixa
   const obterFluxoMes = (mesZeroIndexed: number) => {
@@ -384,11 +384,11 @@ function App() {
   );
 
   // Métricas do Donut Financeiro de Mensalidades (Contagem e Valores em Reais R$)
-  const mensalidadesPagasCount = mensalidades.filter(m => m.status === 'PAGO').length;
+  const mensalidadesPagasCount = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').length;
   const mensalidadesPendentesCount = mensalidades.filter(m => m.status === 'PENDENTE').length;
   const mensalidadesAtrasadasCount = mensalidades.filter(m => m.status === 'ATRASADO').length;
 
-  const valorMensalidadesPagas = mensalidades.filter(m => m.status === 'PAGO').reduce((acc, m) => acc + m.valor, 0);
+  const valorMensalidadesPagas = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0);
   const valorMensalidadesPendentes = mensalidades.filter(m => m.status === 'PENDENTE').reduce((acc, m) => acc + m.valor, 0);
   const valorMensalidadesAtrasadas = mensalidades.filter(m => m.status === 'ATRASADO').reduce((acc, m) => acc + m.valor, 0);
 
