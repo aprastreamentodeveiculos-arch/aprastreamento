@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Login } from './components/Login';
 import { GestaoUsuarios } from './components/GestaoUsuarios';
 import { Dashboard } from './components/dashboard/Dashboard';
+import { Topbar } from './components/layout/Topbar';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
@@ -1026,26 +1027,15 @@ function App() {
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         userRole={userRole}
-        userName={userName}
         selectedOSId={selectedOSId}
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
-        onOpenSupport={() => {
-          setIsSupportModalOpen(true);
-          setSupportSuccessTicketId(null);
-          setSupportError(null);
-        }}
+        
       />
 
       {/* Visualização de Conteúdo Principal */}
       <main className="main-content">
-        {/* Barra superior de simulação e logout */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-          <button className="btn btn-secondary" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-deep)', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            Sair do Sistema
-          </button>
-        </div>
+        <Topbar userName={userName} onLogout={handleLogout} />
 
         {/* --- PÁGINA: DASHBOARD ADMIN --- */}
         {currentPage === 'dashboard' && (
