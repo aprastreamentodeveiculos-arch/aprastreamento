@@ -62,7 +62,8 @@ export const listDespesas = async (req: Request, res: Response): Promise<void> =
   try {
     const { busca, categoriaId, mes } = req.query;
     // Query always filters out soft-deleted items unless explicitly asked (not implemented yet)
-    const query: any = { isDeleted: false };
+    // Backward compatibility: items created before soft-delete won't have the field at all.
+    const query: any = { isDeleted: { $ne: true } };
 
     if (categoriaId) {
       query.categoriaId = categoriaId;
