@@ -711,6 +711,20 @@ function App() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedMensalidadesGeraisIds.length === 0) return;
+    if (confirm(`Atenção: Você está prestes a EXCLUIR ${selectedMensalidadesGeraisIds.length} fatura(s). Esta ação não pode ser desfeita. Confirmar exclusão?`)) {
+      try {
+        await api.financeiro.bulkDelete(selectedMensalidadesGeraisIds);
+        alert('Faturas excluídas com sucesso!');
+        setSelectedMensalidadesGeraisIds([]);
+        carregarDados();
+      } catch (err: any) {
+        alert('Erro ao excluir as faturas: ' + err.message);
+      }
+    }
+  };
+
   const handleBulkDeleteMensalidades = async () => {
     if (selectedMensalidadesIds.length === 0) return;
     if (!window.confirm(`Tem certeza que deseja excluir as ${selectedMensalidadesIds.length} mensalidades selecionadas?`)) return;
@@ -2433,9 +2447,14 @@ function App() {
                     <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>
                       {selectedMensalidadesGeraisIds.length} fatura(s) selecionada(s)
                     </span>
-                    <button className="btn btn-primary" onClick={handleBulkCheckout}>
-                      Dar Baixa Selecionadas
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <button className="btn btn-primary" onClick={handleBulkCheckout}>
+                        Dar Baixa Selecionadas
+                      </button>
+                      <button className="btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleBulkDelete}>
+                        Excluir Selecionadas
+                      </button>
+                    </div>
                   </div>
                 )}
                 <div className="table-container">
