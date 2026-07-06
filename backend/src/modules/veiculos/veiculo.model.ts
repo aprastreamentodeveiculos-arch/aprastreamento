@@ -9,14 +9,16 @@ export interface IVeiculo extends Document {
   ano?: string;
   chassi?: string;
   renavam?: string;
+  ativo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const VeiculoSchema = new Schema<IVeiculo>({
-  clienteId: { type: Schema.Types.ObjectId, ref: 'Cliente', required: true },
+  clienteId: { type: Schema.Types.ObjectId, ref: 'Cliente', required: true, index: true },
+  ativo: { type: Boolean, default: true, index: true },
   placa: { 
-    type: String, 
+    type: String,  
     required: true, 
     unique: true, 
     trim: true, 

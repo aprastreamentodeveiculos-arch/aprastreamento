@@ -12,6 +12,7 @@ export interface IEquipamento extends Document {
   modelo?: string;       
   status: StatusEquipamento;
   tecnicoResponsavelId?: Types.ObjectId;
+  ativo: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ const EquipamentoSchema = new Schema<IEquipamento>({
     unique: true, 
     trim: true 
   },
+  ativo: { type: Boolean, default: true, index: true },
   iccid: { type: String, trim: true },
   numeroLinha: { type: String, trim: true },
   operadora: { type: String, trim: true },

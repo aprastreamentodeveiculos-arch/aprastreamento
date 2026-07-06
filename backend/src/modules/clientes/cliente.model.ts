@@ -32,12 +32,12 @@ const EnderecoSchema = new Schema<IEndereco>({
 }, { _id: false });
 
 const ClienteSchema = new Schema<ICliente>({
-  nome: { type: String, required: true, trim: true },
+  nome: { type: String, required: true, trim: true, index: true },
   documento: { type: String, required: true, unique: true, trim: true },
   email: { type: String, trim: true, lowercase: true },
   whatsapp: { type: String, trim: true },
   endereco: { type: EnderecoSchema, default: {} },
-  ativo: { type: Boolean, default: true },
+  ativo: { type: Boolean, default: true, index: true },
   planoId: { type: Schema.Types.ObjectId, ref: 'Plano', default: null },
   diaVencimento: { type: Number, default: 10, enum: [5, 10, 15, 20, 25] }
 }, {

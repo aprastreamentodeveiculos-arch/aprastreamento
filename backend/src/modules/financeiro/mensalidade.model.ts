@@ -20,8 +20,8 @@ export interface IMensalidade extends Document {
 }
 
 const MensalidadeSchema = new Schema<IMensalidade>({
-  clienteId: { type: Schema.Types.ObjectId, ref: 'Cliente', required: true },
-  dataVencimento: { type: Date, required: true },
+  clienteId: { type: Schema.Types.ObjectId, ref: 'Cliente', required: true, index: true },
+  dataVencimento: { type: Date, required: true, index: true },
   dataEmissao: { type: Date, required: true, default: Date.now },
   dataPagamento: { type: Date },
   valor: { type: Number, required: true, min: 0 },
@@ -35,7 +35,8 @@ const MensalidadeSchema = new Schema<IMensalidade>({
     type: String, 
     required: true, 
     enum: ['PENDENTE', 'PAGO', 'ATRASADO', 'PARCIAL'],
-    default: 'PENDENTE'
+    default: 'PENDENTE',
+    index: true
   }
 }, {
   timestamps: true

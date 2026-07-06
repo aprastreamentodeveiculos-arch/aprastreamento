@@ -107,14 +107,15 @@ export const updateEquipamento = async (req: Request, res: Response): Promise<vo
 export const deleteEquipamento = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const equipamento = await Equipamento.findByIdAndDelete(id);
+    // Soft Delete (Inativação) ao invés de exclusão física para rastro de auditoria
+    const equipamento = await Equipamento.findByIdAndUpdate(id, { ativo: false }, { new: true });
 
     if (!equipamento) {
       res.status(404).json({ message: 'Equipamento não encontrado' });
       return;
     }
 
-    res.status(200).json({ message: 'Equipamento excluído com sucesso' });
+    res.status(200).json({ message: 'Equipamento inativado com sucesso', equipamento });
   } catch (error: any) {
     res.status(500).json({ message: 'Erro ao excluir equipamento', error: error.message });
   }

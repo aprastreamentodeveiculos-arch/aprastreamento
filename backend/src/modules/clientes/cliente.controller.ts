@@ -190,7 +190,13 @@ export const deleteCliente = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    res.status(200).json({ message: 'Cliente desativado com sucesso.', cliente });
+    // Cancelar as mensalidades pendentes deste cliente para que não fiquem ativas no faturamento
+    await Mensalidade.updateMany(
+      { clienteId: id, status: 'PENDENTE' },
+      { $set: { status: 'CANCELADO', observacao: 'Cliente inativado.' } }
+    );
+
+    res.status(200).json({ message: 'Cliente desativado com sucesso. Mensalidades pendentes foram canceladas.', cliente });
   } catch (error: any) {
     res.status(500).json({ error: 'Erro ao desativar cliente.', details: error.message });
   }

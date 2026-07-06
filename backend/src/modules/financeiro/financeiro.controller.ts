@@ -170,6 +170,11 @@ export const createMensalidadeAvulsa = async (req: Request, res: Response): Prom
       return;
     }
 
+    if (Number(valor) < 0) {
+      res.status(400).json({ error: 'Valor da mensalidade não pode ser negativo.' });
+      return;
+    }
+
     const cliente = await Cliente.findById(clienteId);
     if (!cliente) {
       res.status(404).json({ error: 'Cliente não encontrado.' });
@@ -318,5 +323,20 @@ export const deleteMensalidade = async (req: Request, res: Response): Promise<vo
     res.status(200).json({ message: 'Mensalidade excluída com sucesso' });
   } catch (error: any) {
     res.status(500).json({ message: 'Erro ao excluir mensalidade', error: error.message });
+  }
+};
+
+export const bulkDeleteMensalidades = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ message: 'Nenhum ID fornecido para exclusão.' });
+      return;
+    }
+
+    const result = await Mensalidade.deleteMany({ _id: { $in: ids } });
+    res.status(200).json({ message: `${result.deletedCount} mensalidade(s) excluída(s) com sucesso.` });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Erro ao excluir mensalidades em lote', error: error.message });
   }
 };

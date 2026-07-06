@@ -164,15 +164,15 @@ export const deleteVeiculo = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Além de excluir o veículo, idealmente deveríamos registrar no Histórico que o rastreador (se houver) foi desinstalado, mas para não quebrar a lógica atual, faremos a exclusão física do veículo.
-    const veiculo = await Veiculo.findByIdAndDelete(id);
+    // Soft Delete do veículo (Inativação) para preservar integridade
+    const veiculo = await Veiculo.findByIdAndUpdate(id, { ativo: false }, { new: true });
 
     if (!veiculo) {
       return res.status(404).json({ message: 'Veículo não encontrado' });
     }
 
-    res.status(200).json({ message: 'Veículo excluído com sucesso' });
+    res.status(200).json({ message: 'Veículo inativado com sucesso', veiculo });
   } catch (error: any) {
-    res.status(500).json({ message: 'Erro ao excluir veículo', error: error.message });
+    res.status(500).json({ message: 'Erro ao inativar veículo', error: error.message });
   }
 };

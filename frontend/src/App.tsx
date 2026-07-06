@@ -12,6 +12,7 @@ function App() {
   const [userRole, setUserRole] = useState<'admin' | 'tecnico'>('admin');
   const [userName, setUserName] = useState<string>('Usuário');
   const [currentPage, setCurrentPage] = useState<string>('dashboard');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     const savedUser = typeof window !== 'undefined' ? localStorage.getItem('aprastro_user') : null;
@@ -134,6 +135,26 @@ function App() {
     novaDataVencimento: ''
   });
   const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
+  const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
+
+  // --- MÁSCARAS DE INPUT ---
+  const mascaraDocumento = (value: string) => {
+    let v = value.replace(/\D/g, "");
+    if (v.length <= 11) {
+      return v.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+      return v.replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d)/, "$1-$2").substring(0, 18);
+    }
+  };
+
+  const mascaraPlaca = (value: string) => {
+    let v = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    if (v.length > 3) {
+      return v.slice(0, 3) + "-" + v.slice(3, 7);
+    }
+    return v;
+  };
+  // -------------------------
 
   // Estados dos formulários de cadastro
   const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
@@ -239,10 +260,12 @@ function App() {
     carregarDados();
   }, []);
 
-  // Recarregar dados sempre que trocar de tela
-  useEffect(() => {
-    carregarDados();
-  }, [currentPage]);
+  // O React Hot Toast e o Lazy Loading real exigiria endpoints dedicados para o Dashboard.
+  // Como otimização imediata anti-lentidão: Carregar apenas uma vez no boot (e não a cada clique de aba).
+  // As funções de salvar/editar já chamam carregarDados() localmente após o sucesso.
+  // useEffect(() => {
+  //   carregarDados();
+  // }, [currentPage]);
 
   // Ao trocar de perfil de usuário, ajusta a página ativa padrão
   useEffect(() => {
@@ -618,6 +641,8 @@ function App() {
 
   const handleCreateMensalidade = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await api.financeiro.createAvulsa(newMensalidade);
       alert('Mensalidade avulsa criada com sucesso!');
@@ -625,12 +650,15 @@ function App() {
       carregarDados();
     } catch (err: any) {
       alert('Erro: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEditMensalidadeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editMensalidade) return;
+    if (!editMensalidade || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await api.financeiro.update(editMensalidade._id, {
         valor: editMensalidade.valor,
@@ -643,17 +671,44 @@ function App() {
       carregarDados();
     } catch (err: any) {
       alert('Erro: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteMensalidade = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir esta mensalidade?')) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await api.financeiro.delete(id);
       alert('Mensalidade excluída com sucesso!');
       carregarDados();
     } catch (err: any) {
       alert('Erro: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkDeleteMensalidades = async () => {
+    if (selectedMensalidadesIds.length === 0) return;
+    if (!window.confirm(`Tem certeza que deseja excluir as ${selectedMensalidadesIds.length} mensalidades selecionadas?`)) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await api.financeiro.bulkDelete(selectedMensalidadesIds);
+      alert('Mensalidades excluídas com sucesso!');
+      setSelectedMensalidadesIds([]);
+      carregarDados();
+      if (selectedClientePanorama) {
+        const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
+        setSelectedClientePanorama(panorama);
+      }
+    } catch (err: any) {
+      alert('Erro: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -670,7 +725,8 @@ function App() {
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkoutMensalidadeId) return;
+    if (!checkoutMensalidadeId || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await api.financeiro.checkout(checkoutMensalidadeId._id, checkoutData);
       alert('Checkout processado com sucesso! Protocolo: ' + (res.mensalidade?.protocolo || res.mensalidadeOrigem?.protocolo));
@@ -683,6 +739,8 @@ function App() {
       }
     } catch (err: any) {
       alert('Erro no checkout: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1593,7 +1651,7 @@ function App() {
                               <td>
                                 <input type="text" className="input" placeholder="ABC-1234" value={row.placa} onChange={(e) => {
                                   const newRows = [...frotaRows];
-                                  newRows[index].placa = e.target.value;
+                                  newRows[index].placa = mascaraPlaca(e.target.value);
                                   setFrotaRows(newRows);
                                 }} />
                               </td>
@@ -1793,7 +1851,19 @@ function App() {
                   </button>
                 </div>
                 <div className="table-box">
-                  <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
+                    {selectedMensalidadesIds.length > 0 && (
+                      <button 
+                        className="btn" 
+                        style={{ background: 'var(--danger)', color: '#fff', border: 'none', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                        onClick={handleBulkDeleteMensalidades}
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? 'Apagando...' : `🗑️ Apagar Selecionadas (${selectedMensalidadesIds.length})`}
+                      </button>
+                    )}
+                  </div>
                   <div className="table-container" style={{ marginTop: '1rem' }}>
                     {selectedClientePanorama.mensalidades.length === 0 ? (
                       <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhuma fatura gerada para este cliente.</p>
@@ -1801,6 +1871,19 @@ function App() {
                     <table>
                       <thead>
                         <tr>
+                          <th>
+                            <input 
+                              type="checkbox" 
+                              checked={selectedMensalidadesIds.length === selectedClientePanorama.mensalidades.length && selectedClientePanorama.mensalidades.length > 0}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedMensalidadesIds(selectedClientePanorama.mensalidades.map((m: any) => m._id));
+                                } else {
+                                  setSelectedMensalidadesIds([]);
+                                }
+                              }}
+                            />
+                          </th>
                           <th>Valor</th>
                           <th>Emissão</th>
                           <th>Vencimento</th>
@@ -1811,6 +1894,19 @@ function App() {
                       <tbody>
                         {selectedClientePanorama.mensalidades.map((m: any) => (
                           <tr key={m._id}>
+                            <td>
+                              <input 
+                                type="checkbox" 
+                                checked={selectedMensalidadesIds.includes(m._id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedMensalidadesIds([...selectedMensalidadesIds, m._id]);
+                                  } else {
+                                    setSelectedMensalidadesIds(selectedMensalidadesIds.filter(id => id !== m._id));
+                                  }
+                                }}
+                              />
+                            </td>
                             <td><strong>R$ {m.valor.toFixed(2)}</strong></td>
                             <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
                             <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
@@ -3669,7 +3765,11 @@ function App() {
               </div>
               <div className="form-group">
                 <label>Valor (R$)</label>
-                <input type="number" step="0.01" value={newMensalidade.valor} onChange={(e) => setNewMensalidade({...newMensalidade, valor: e.target.value})} className="input" required />
+                <input type="text" placeholder="Ex: 80.00" value={newMensalidade.valor} onChange={(e) => {
+                  let val = e.target.value.replace(',', '.');
+                  val = val.replace(/[^0-9.]/g, ''); // permite apenas números e pontos
+                  setNewMensalidade({...newMensalidade, valor: val});
+                }} className="input" required />
               </div>
               <div className="form-group">
                 <label>Vencimento</label>
@@ -3683,7 +3783,9 @@ function App() {
                   <option value="ATRASADO">Atrasado</option>
                 </select>
               </div>
-              <button type="submit" className="btn btn-primary">Gerar Mensalidade</button>
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Gerando...' : 'Gerar Mensalidade'}
+              </button>
             </form>
           </div>
         </div>
