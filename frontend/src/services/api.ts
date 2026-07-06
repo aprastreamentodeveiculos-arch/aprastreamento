@@ -95,7 +95,10 @@ export interface Mensalidade {
   dataEmissao: string;
   dataPagamento?: string;
   valor: number;
-  status: 'PENDENTE' | 'PAGO' | 'ATRASADO';
+  valorPago?: number;
+  desconto?: number;
+  acrescimo?: number;
+  status: 'PENDENTE' | 'PAGO' | 'ATRASADO' | 'PARCIAL';
 }
 
 export interface CategoriaDespesa {

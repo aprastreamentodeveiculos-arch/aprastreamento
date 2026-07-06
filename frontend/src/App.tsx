@@ -1708,7 +1708,11 @@ function App() {
                                 }}
                               />
                             </td>
-                            <td><strong>R$ {m.valor.toFixed(2)}</strong></td>
+                            <td>
+                              <strong>R$ {((m.status === 'PAGO' || m.status === 'PARCIAL') && m.valorPago != null ? m.valorPago : m.valor).toFixed(2)}</strong>
+                              {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.desconto || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--success)'}}>- R$ {Number(m.desconto).toFixed(2)} (desc)</div>}
+                              {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.acrescimo || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--danger)'}}>+ R$ {Number(m.acrescimo).toFixed(2)} (juros)</div>}
+                            </td>
                             <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
                             <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
                             <td>
@@ -2499,7 +2503,11 @@ function App() {
                               </div>
                             </div>
                           </td>
-                          <td><strong>R$ {m.valor.toFixed(2)}</strong></td>
+                          <td>
+                            <strong>R$ {((m.status === 'PAGO' || m.status === 'PARCIAL') && m.valorPago != null ? m.valorPago : m.valor).toFixed(2)}</strong>
+                            {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.desconto || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--success)'}}>- R$ {Number(m.desconto).toFixed(2)} (desc)</div>}
+                            {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.acrescimo || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--danger)'}}>+ R$ {Number(m.acrescimo).toFixed(2)} (juros)</div>}
+                          </td>
                           <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
                           <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
                           <td>
