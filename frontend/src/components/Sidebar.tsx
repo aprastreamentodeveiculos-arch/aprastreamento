@@ -23,11 +23,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className={`sidebar glass-panel ${!isDesktopExpanded ? 'narrow' : ''} ${isOpen ? 'open' : ''}`}>
-      {/* Botão de Fechar Mobile */}
-      <button className="close-sidebar-btn" onClick={onClose} aria-label="Fechar menu" title="Fechar">
-        ✕
-      </button>
-
       {/* Logo Oficial AP Rastro em SVG Simplificado para Sidebar Estreita */}
       <div className="sidebar-logo">
         <svg width="35" height="30" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">

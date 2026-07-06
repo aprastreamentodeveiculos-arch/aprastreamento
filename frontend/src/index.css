@@ -89,6 +89,10 @@ body {
     margin-left: 0;
     padding: 1.5rem;
   }
+  .topbar-actions .icon-btn,
+  .topbar-actions .user-profile {
+    display: none !important;
+  }
 }
 
 /* Cards Premium */
