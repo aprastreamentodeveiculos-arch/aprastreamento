@@ -105,7 +105,7 @@ export const updateVeiculo = async (req: Request, res: Response) => {
     const veiculo = await Veiculo.findByIdAndUpdate(
       id,
       { placa, marca, modelo, cor, ano, chassi, renavam },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!veiculo) {
@@ -165,7 +165,7 @@ export const deleteVeiculo = async (req: Request, res: Response) => {
     const { id } = req.params;
     
     // Soft Delete do veículo (Inativação) para preservar integridade
-    const veiculo = await Veiculo.findByIdAndUpdate(id, { ativo: false }, { new: true });
+    const veiculo = await Veiculo.findByIdAndUpdate(id, { ativo: false }, { returnDocument: 'after' });
 
     if (!veiculo) {
       return res.status(404).json({ message: 'Veículo não encontrado' });

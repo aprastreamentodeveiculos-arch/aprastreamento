@@ -183,7 +183,7 @@ export const deleteCliente = async (req: Request, res: Response): Promise<void> 
     const { id } = req.params;
     
     // Em sistemas ERP, geralmente desativamos o cadastro em vez de apagar do banco físico.
-    const cliente = await Cliente.findByIdAndUpdate(id, { ativo: false }, { new: true });
+    const cliente = await Cliente.findByIdAndUpdate(id, { ativo: false }, { returnDocument: 'after' });
 
     if (!cliente) {
       res.status(404).json({ error: 'Cliente não encontrado.' });

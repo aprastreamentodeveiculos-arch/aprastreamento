@@ -90,7 +90,7 @@ export const updateEquipamento = async (req: Request, res: Response): Promise<vo
     const equipamento = await Equipamento.findByIdAndUpdate(
       id,
       { identificador, iccid, numeroLinha, operadora, apn, marca, modelo },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!equipamento) {
@@ -108,7 +108,7 @@ export const deleteEquipamento = async (req: Request, res: Response): Promise<vo
   try {
     const { id } = req.params;
     // Soft Delete (Inativação) ao invés de exclusão física para rastro de auditoria
-    const equipamento = await Equipamento.findByIdAndUpdate(id, { ativo: false }, { new: true });
+    const equipamento = await Equipamento.findByIdAndUpdate(id, { ativo: false }, { returnDocument: 'after' });
 
     if (!equipamento) {
       res.status(404).json({ message: 'Equipamento não encontrado' });

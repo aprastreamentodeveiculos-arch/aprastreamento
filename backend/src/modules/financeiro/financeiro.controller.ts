@@ -295,7 +295,7 @@ export const updateMensalidade = async (req: Request, res: Response): Promise<vo
     const mensalidade = await Mensalidade.findByIdAndUpdate(
       id,
       { valor, dataVencimento, status, observacao },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!mensalidade) {

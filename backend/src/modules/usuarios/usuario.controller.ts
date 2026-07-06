@@ -74,7 +74,7 @@ export const updateUsuario = async (req: Request, res: Response) => {
       updates.senhaHash = await bcrypt.hash(senha, salt);
     }
 
-    const usuario = await Usuario.findByIdAndUpdate(id, updates, { new: true }).select('-senhaHash');
+    const usuario = await Usuario.findByIdAndUpdate(id, updates, { returnDocument: 'after' }).select('-senhaHash');
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
