@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './components/Login';
 import { GestaoUsuarios } from './components/GestaoUsuarios';
+import { Dashboard } from './components/dashboard/Dashboard';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
@@ -138,6 +139,7 @@ function App() {
   const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
 
   // --- MÁSCARAS DE INPUT ---
+  // @ts-ignore
   const mascaraDocumento = (value: string) => {
     let v = value.replace(/\D/g, "");
     if (v.length <= 11) {
@@ -1047,260 +1049,29 @@ function App() {
 
         {/* --- PÁGINA: DASHBOARD ADMIN --- */}
         {currentPage === 'dashboard' && (
-          <div>
-            <div className="view-header">
-              <h1>Dashboard Operacional</h1>
-            </div>
-
-            {/* Grid dos Cards */}
-            <div className="dashboard-grid">
-              <div className="analytics-card">
-                <div className="card-header-spark">
-                  <div className="card-icon-container primary">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                  </div>
-                  <div className="card-trend up">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="18 15 12 9 6 15"/></svg>
-                    <span>1.19%</span>
-                  </div>
-                </div>
-                <div className="card-body-spark">
-                  <div className="card-info">
-                    <span>Recorrência Mensal</span>
-                    <h2>R$ {totalReceitaEstimada.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                  </div>
-                  <div className="sparkline-container">
-                    <svg viewBox="0 0 100 45" width="100%" height="100%">
-                      <defs>
-                        <linearGradient id="grad-green" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#22C55E" stopOpacity="0.3"/>
-                          <stop offset="100%" stopColor="#22C55E" stopOpacity="0.0"/>
-                        </linearGradient>
-                      </defs>
-                      <path d="M 0 35 Q 20 20 40 28 T 80 10 T 100 5 L 100 45 L 0 45 Z" fill="url(#grad-green)"/>
-                      <path d="M 0 35 Q 20 20 40 28 T 80 10 T 100 5" fill="none" stroke="#22C55E" strokeWidth="2"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="analytics-card">
-                <div className="card-header-spark">
-                  <div className="card-icon-container blue">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><path d="M16 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h1"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                  </div>
-                  <div className="card-trend up">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="18 15 12 9 6 15"/></svg>
-                    <span>1.42%</span>
-                  </div>
-                </div>
-                <div className="card-body-spark">
-                  <div className="card-info">
-                    <span>Veículos Monitorados</span>
-                    <h2>{totalVeiculosMonitorados} veículos</h2>
-                  </div>
-                  <div className="sparkline-container">
-                    <svg viewBox="0 0 100 45" width="100%" height="100%">
-                      <path d="M 0 25 Q 15 15 35 30 T 70 12 T 100 8 L 100 45 L 0 45 Z" fill="url(#grad-green)"/>
-                      <path d="M 0 25 Q 15 15 35 30 T 70 12 T 100 8" fill="none" stroke="#22C55E" strokeWidth="2"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="analytics-card">
-                <div className="card-header-spark">
-                  <div className="card-icon-container purple">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  </div>
-                  <div className="card-trend up">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="18 15 12 9 6 15"/></svg>
-                    <span>0.29%</span>
-                  </div>
-                </div>
-                <div className="card-body-spark">
-                  <div className="card-info">
-                    <span>Lucro Real Estimado</span>
-                    <h2>R$ {lucroReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                  </div>
-                  <div className="sparkline-container">
-                    <svg viewBox="0 0 100 45" width="100%" height="100%">
-                      <path d="M 0 38 Q 25 35 50 15 T 90 8 T 100 5 L 100 45 L 0 45 Z" fill="url(#grad-green)"/>
-                      <path d="M 0 38 Q 25 35 50 15 T 90 8 T 100 5" fill="none" stroke="#22C55E" strokeWidth="2"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="analytics-card">
-                <div className="card-header-spark">
-                  <div className="card-icon-container yellow">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  </div>
-                  <div className="card-trend down">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="6 9 12 15 18 9"/></svg>
-                    <span>0.15%</span>
-                  </div>
-                </div>
-                <div className="card-body-spark">
-                  <div className="card-info">
-                    <span>Despesas Acumuladas</span>
-                    <h2>R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                  </div>
-                  <div className="sparkline-container">
-                    <svg viewBox="0 0 100 45" width="100%" height="100%">
-                      <defs>
-                        <linearGradient id="grad-red" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#EF4444" stopOpacity="0.3"/>
-                          <stop offset="100%" stopColor="#EF4444" stopOpacity="0.0"/>
-                        </linearGradient>
-                      </defs>
-                      <path d="M 0 10 Q 20 28 40 15 T 80 32 T 100 38 L 100 45 L 0 45 Z" fill="url(#grad-red)"/>
-                      <path d="M 0 10 Q 20 28 40 15 T 80 32 T 100 38" fill="none" stroke="#EF4444" stroke-width="2"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="activity-section">
-              <div className="card">
-                <h3>Fluxo de Caixa Mensal</h3>
-                <div className="bar-chart-container">
-                  <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(fluxoAbril.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoAbril.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Abr (Receita)</span>
-                  </div>
-                  <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(fluxoAbril.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoAbril.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Abr (Despesas)</span>
-                  </div>
-                  <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(fluxoMaio.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoMaio.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Mai (Receita)</span>
-                  </div>
-                  <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(fluxoMaio.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoMaio.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Mai (Despesas)</span>
-                  </div>
-                  <div className="bar-col">
-                    <div className="bar-graphic in" style={{ height: `${(fluxoJunho.receita / maxVal) * 90}%` }} data-value={`R$ ${fluxoJunho.receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Jun (Receita)</span>
-                  </div>
-                  <div className="bar-col">
-                    <div className="bar-graphic out" style={{ height: `${(fluxoJunho.despesa / maxVal) * 90}%` }} data-value={`R$ ${fluxoJunho.despesa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}></div>
-                    <span className="bar-label">Jun (Despesas)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card donut-chart-box">
-                <h3>Faturamento Mensal</h3>
-                <div className="donut-chart-container">
-                  <svg className="donut-svg" width="150" height="150" viewBox="0 0 100 100">
-                    <circle className="donut-circle-bg" cx="50" cy="50" r="40" />
-                    <circle className="donut-circle-val3" cx="50" cy="50" r="40" strokeDasharray="251.2" style={{ strokeDashoffset: offsetAtrasadas, stroke: 'var(--primary)', filter: 'drop-shadow(0 0 5px rgba(255, 0, 60, 0.5))' }} />
-                    <circle className="donut-circle-val2" cx="50" cy="50" r="40" strokeDasharray="251.2" style={{ strokeDashoffset: offsetPendentes, stroke: 'var(--accent-yellow)', filter: 'drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))' }} />
-                    <circle className="donut-circle-val1" cx="50" cy="50" r="40" strokeDasharray="251.2" style={{ strokeDashoffset: offsetPagas, stroke: 'var(--success)', filter: 'drop-shadow(0 0 5px rgba(57, 255, 20, 0.5))' }} />
-                  </svg>
-                  <div className="donut-text">
-                    <h3 style={{ fontSize: '1.25rem' }}>R$ {valorMensalidadesPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
-                    <span>Recebido</span>
-                  </div>
-                </div>
-                <div className="donut-legend">
-                  <div className="legend-item">
-                    <div className="legend-label-group">
-                      <div className="legend-dot" style={{ backgroundColor: 'var(--success)' }}></div>
-                      <span>Recebidas (Pagas)</span>
-                    </div>
-                    <strong>R$ {valorMensalidadesPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({mensalidadesPagasCount})</strong>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-label-group">
-                      <div className="legend-dot" style={{ backgroundColor: 'var(--accent-yellow)' }}></div>
-                      <span>Pendentes</span>
-                    </div>
-                    <strong>R$ {valorMensalidadesPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({mensalidadesPendentesCount})</strong>
-                  </div>
-                  <div className="legend-item">
-                    <div className="legend-label-group">
-                      <div className="legend-dot" style={{ backgroundColor: 'var(--primary)' }}></div>
-                      <span>Atrasadas</span>
-                    </div>
-                    <strong>R$ {valorMensalidadesAtrasadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({mensalidadesAtrasadasCount})</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="table-box">
-              <div className="table-box-header">
-                <h3>Instalações Ativas / Clientes</h3>
-              </div>
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Documento</th>
-                      <th>Veículos Ativos</th>
-                      <th>Faturamento Mensal</th>
-                      <th>Status Faturamento</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientes.map(c => (
-                      <tr key={c._id}>
-                        <td>
-                          <div className="customer-cell" style={{ cursor: 'pointer' }} onClick={() => handleAbrirFichaCliente(c._id)}>
-                            <div className={`customer-avatar ${getAvatarColor(c._id)}`}>
-                              {getInitials(c.nome)}
-                            </div>
-                            <div className="customer-info">
-                              <span style={{ color: 'var(--primary-hover)', textDecoration: 'underline' }}>{c.nome}</span>
-                              <small>{c.email}</small>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{c.documento}</td>
-                        <td>
-                          <span className="badge badge-info">{(c.veiculosCount || 0)} veículos</span>
-                        </td>
-                        <td>
-                          <strong>
-                            R$ {(() => {
-                              const vCount = c.veiculosCount || 0;
-                              if (vCount === 0) return '0.00';
-                              const p = c.planoId as any;
-                              let val = vCount * 80.00;
-                              if (p) {
-                                if (p.tipoCobranca === 'POR_VEICULO') val = vCount * p.valorBase;
-                                else if (p.tipoCobranca === 'FIXO_GLOBAL') val = p.valorBase;
-                                else if (p.tipoCobranca === 'ESCALONADO_FROTA') {
-                                  const fx = p.faixasPreco?.find((f: any) => vCount >= f.de && (!f.ate || vCount <= f.ate));
-                                  val = vCount * (fx ? fx.valor : 80.00);
-                                }
-                                if (p.descontoFidelidadePct > 0) {
-                                  val = val - (val * (p.descontoFidelidadePct / 100));
-                                }
-                              }
-                              return val.toFixed(2);
-                            })()}
-                          </strong>
-                        </td>
-                        <td>
-                          <span className={`status-badge ${(c.veiculosCount || 0) > 0 ? 'active' : 'pending'}`}>
-                            {(c.veiculosCount || 0) > 0 ? 'EM DIA' : 'SEM COBRANÇA'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <Dashboard 
+            totalReceitaEstimada={totalReceitaEstimada}
+            totalVeiculosMonitorados={totalVeiculosMonitorados}
+            lucroReal={lucroReal}
+            totalDespesas={totalDespesas}
+            fluxoAbril={fluxoAbril}
+            fluxoMaio={fluxoMaio}
+            fluxoJunho={fluxoJunho}
+            maxVal={maxVal}
+            offsetAtrasadas={offsetAtrasadas}
+            offsetPendentes={offsetPendentes}
+            offsetPagas={offsetPagas}
+            valorMensalidadesPagas={valorMensalidadesPagas}
+            valorMensalidadesPendentes={valorMensalidadesPendentes}
+            valorMensalidadesAtrasadas={valorMensalidadesAtrasadas}
+            mensalidadesPagasCount={mensalidadesPagasCount}
+            mensalidadesPendentesCount={mensalidadesPendentesCount}
+            mensalidadesAtrasadasCount={mensalidadesAtrasadasCount}
+            clientes={clientes}
+            handleAbrirFichaCliente={handleAbrirFichaCliente}
+            getAvatarColor={getAvatarColor}
+            getInitials={getInitials}
+          />
         )}
 
         {/* --- PÁGINA: LISTAGEM DE CLIENTES (Tela Inteira) --- */}

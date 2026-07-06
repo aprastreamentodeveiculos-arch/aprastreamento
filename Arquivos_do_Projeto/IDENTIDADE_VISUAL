@@ -1,0 +1,23 @@
+📋 COPY & PASTE (Diretrizes de Identidade Visual - AP RASTRO)
+Contexto do Produto: O "AP RASTRO" é um sistema SaaS de gestão empresarial e rastreamento veicular de altíssimo nível (Enterprise Grade). A interface deve inspirar total confiança, segurança de dados e modernidade.
+
+1. Filosofia de Design (O Fator "WOW")
+
+Sensação Principal: O design deve passar uma sensação "Premium", executiva e de vanguarda tecnológica. Produtos simples ou minimalismos pobres (MVPs básicos) são inaceitáveis.
+Dinamismo: A interface deve parecer "viva" e responsiva, respondendo instantaneamente às ações do usuário.
+2. Paleta de Cores e Tematização
+
+Proibição: Cores primárias cruas ou genéricas (vermelho puro, azul puro, verde puro) são estritamente proibidas.
+Padrão Exigido: Uso de paletas harmoniosas e curadas (baseadas em HSL adaptativo).
+Dark Mode Nativo: A estética principal deve abraçar variações de Sleek Dark Mode (tons escuros elegantes, grafites profundos e fundos acinzentados), mesclados com toques de cores neon/vibrantes para destacar ações e status (ex: veículos online, alertas de segurança).
+Efeitos Modernos: Utilizar Glassmorphism (efeitos de vidro fosco, transparências e desfoque de fundo) para modais e painéis flutuantes, além de gradientes suaves e sutis para quebrar a monotonia visual.
+3. Tipografia e Leitura
+
+Fontes: Fica terminantemente proibido o uso das fontes padrão do navegador. A tipografia deve ser robusta, legível e moderna.
+Famílias Sugeridas: Padrão Google Fonts utilizando famílias "Sans-Serif" geométricas e limpas, como Inter, Outfit ou Roboto.
+Hierarquia Visual: Forte contraste entre Títulos (pesados/bold) e subtítulos/dados (leves/light), para facilitar a leitura rápida de placas, nomes de clientes e valores financeiros.
+4. Micro-Interações e Elementos Visuais
+
+Feedback Visual: Todo botão, card ou linha de tabela deve possuir efeitos de Hover (mudanças ao passar o mouse).
+Animações: Emprego de micro-animações para transições de tela, abertura de menus e botões de carregamento (ex: botões críticos devem mostrar spinners em vez de apenas travarem durante envios de formulário).
+Sinalização Elegante: Erros e alertas não devem ser pop-ups nativos grotescos do navegador (alert()), mas sim notificações flutuantes suaves (Toasts) no canto da tela, categorizadas por cor (Sucesso, Atenção, Erro).

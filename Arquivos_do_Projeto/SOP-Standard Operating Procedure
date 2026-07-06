@@ -1,0 +1,45 @@
+Standard Operating Procedure
+# SOP para Agente de IA: Análise do Sistema Completo
+
+**Objetivo:** Monitorar, analisar e diagnosticar a saúde, performance e integridade do sistema de gestão de rastreamento.
+
+**Stack Tecnológica Autorizada:**
+*   **Frontend:** React (Hospedagem: Vercel)
+*   **Backend:** Node.js (Hospedagem: Render)
+*   **Banco de Dados:** MongoDB
+
+---
+
+## 1. Procedimento de Análise (Passo a Passo)
+
+### Fase 1: Análise do Frontend (React / Vercel)
+1.  **Status de Deploy:** Verificar no painel da Vercel se os últimos *deployments* do React foram concluídos com sucesso.
+2.  **Performance de Usuário:** Coletar métricas de *Core Web Vitals* (LCP, CLS, INP) via Vercel Analytics para garantir uma experiência rápida.
+3.  **Erros de Interface:** Identificar falhas de renderização no React ou erros de console que impeçam o uso do dashboard.
+
+### Fase 2: Análise do Backend (Node.js / Render)
+1.  **Status da Instância:** Verificar se o serviço no Render está *Active* ou se sofreu *crash/restart* por falta de memória.
+2.  **Logs de Execução:** Analisar os logs do Node.js em busca de erros HTTP (status 500, 400) e exceções não tratadas.
+3.  **Recursos do Servidor:** Monitorar o consumo de CPU e RAM no Render para identificar vazamentos de memória ou necessidade de ajuste de plano.
+4.  **Latência da API:** Medir o tempo de resposta dos endpoints para garantir que o backend não está sobrecarregado.
+
+### Fase 3: Análise do Banco de Dados (MongoDB)
+1.  **Conexões:** Verificar o status e a quantidade de conexões ativas entre o Node.js (Render) e o MongoDB.
+2.  **Performance de Queries:** Identificar *slow queries* (consultas lentas) e validar se os índices estão sendo utilizados corretamente.
+3.  **Carga de Trabalho:** Monitorar o volume de operações de leitura/escrita por segundo e o crescimento do armazenamento.
+
+### Fase 4: Análise de Integração (Fluxo Ponta a Ponta)
+1.  **Latência de Rede:** Rastrear o tempo de comunicação entre o Frontend (Vercel) e o Backend (Render).
+2.  **Integridade de Dados:** Validar se as operações críticas (ex: login, cadastro de veículos, atualização de mensalidades) estão gravando e retornando dados corretamente no MongoDB.
+
+---
+
+## 2. Rotina e Ações do Agente de IA
+
+*   **Coleta:** O agente deve ler logs e métricas da Vercel, Render e MongoDB em intervalos regulares (ex: a cada 15 minutos).
+*   **Diagnóstico Cruzado:** Se houver um erro 500 no Node.js (Render), o agente deve imediatamente verificar os logs do MongoDB para checar se foi um *timeout* de conexão ou *query* lenta.
+*   **Gatilhos de Alerta/Ação:**
+    *   **Crítico (Sistema Off-line / Falha de DB):** Alertar imediatamente a equipe técnica via canal de emergência.
+    *   **Atenção (Alto uso de RAM no Render / Slow Queries no MongoDB):** Gerar relatório sugerindo otimização de código no Node.js ou criação de índices no MongoDB.
+    *   **Preventivo (Métricas ruins na Vercel):** Sugerir otimização de *assets* e *lazy loading* nos componentes React.
+
