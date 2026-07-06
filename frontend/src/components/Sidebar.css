@@ -246,6 +246,15 @@
   .sidebar.open {
     transform: translateX(0);
     box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+    width: 250px !important;
+  }
+
+  .sidebar.open .sidebar-label {
+    display: block !important;
+  }
+  
+  .sidebar.open .sidebar-item {
+    justify-content: flex-start !important;
   }
 
   .close-sidebar-btn {
