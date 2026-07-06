@@ -17,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole,
   selectedOSId = 'avulsa',
   isOpen,
+  isDesktopExpanded,
   onClose,
 }) => {
 
