@@ -286,3 +286,11 @@
 .sidebar:not(.narrow) .sidebar-logo-text {
   display: flex;
 }
+
+
+.sidebar.narrow .sidebar-label {
+  display: none;
+}
+.sidebar:not(.narrow) .sidebar-label {
+  display: block;
+}

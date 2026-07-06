@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
 
   return (
-    <aside className={`sidebar narrow glass-panel ${isOpen ? 'open' : ''}`}>
+    <aside className={`sidebar glass-panel ${!isDesktopExpanded ? 'narrow' : ''} ${isOpen ? 'open' : ''}`}>
       {/* Botão de Fechar Mobile */}
       <button className="close-sidebar-btn" onClick={onClose} aria-label="Fechar menu" title="Fechar">
         ✕
@@ -37,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <path d="M42 84 L57 52 L65 52 L80 84 L72 84 L69 76 L53 76 L50 84 Z M56 68 L66 68 L61 58 Z" fill="#000000"/>
           <path d="M80 52 L98 52 C103 52, 107 55, 107 59 C107 63, 103 66, 98 66 L87 66 L87 84 L80 84 Z M87 58 L87 61 L96 61 C98 61, 99 60, 99 59 C99 58, 98 58, 96 58 Z" fill="#000000"/>
         </svg>
+              <span className="sidebar-label">Fechar</span>
       </div>
 
       <nav className="sidebar-menu">
@@ -53,6 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <rect x="14" y="12" width="7" height="9" rx="1" />
                 <rect x="3" y="16" width="7" height="5" rx="1" />
               </svg>
+              <span className="sidebar-label">Dashboard</span>
+              
             </button>
 
             <button
@@ -65,6 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <circle cx="11" cy="7" r="4" />
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
+              <span className="sidebar-label">Gestão de Usuários</span>
             </button>
 
             <button
@@ -78,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
+              <span className="sidebar-label">Clientes</span>
             </button>
 
             <button
@@ -89,6 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
+              <span className="sidebar-label">Técnicos</span>
             </button>
 
             <button
@@ -101,6 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                 <line x1="12" y1="22.08" x2="12" y2="12" />
               </svg>
+              <span className="sidebar-label">Estoque</span>
             </button>
 
             <button
@@ -114,6 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <line x1="16" y1="13" x2="8" y2="13" />
                 <line x1="16" y1="17" x2="8" y2="17" />
               </svg>
+              <span className="sidebar-label">Ordens de Serviço</span>
             </button>
 
             <button
@@ -125,6 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <line x1="12" y1="1" x2="12" y2="23" />
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
+              <span className="sidebar-label">Mensalidades</span>
             </button>
 
             <button
@@ -136,6 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
+              <span className="sidebar-label">Fluxo de Caixa</span>
             </button>
 
             <button
@@ -147,6 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
+              <span className="sidebar-label">Histórico Cruzado</span>
             </button>
           </>
         ) : (
@@ -160,6 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                 <polyline points="22,6 12,13 2,6" />
               </svg>
+              <span className="sidebar-label">Caixa de Entrada</span>
             </button>
 
             <button
@@ -170,6 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 5v14M5 12h14" />
               </svg>
+              <span className="sidebar-label">Nova O.S. Avulsa</span>
             </button>
           </>
         )}
