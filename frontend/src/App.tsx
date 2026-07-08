@@ -832,6 +832,7 @@ function App() {
       desconto: 0,
       acrescimo: 0,
       valorPago: m.valor,
+      dataPagamento: new Date().toISOString().split('T')[0],
       formaPagamento: 'PIX',
       novaDataVencimento: ''
     });
