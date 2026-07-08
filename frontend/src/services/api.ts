@@ -52,6 +52,10 @@ export interface Cliente {
   planoId?: string | Plano | null;
   diaVencimento?: number;
   createdAt?: string;
+  indicacao?: string;
+  motivoInativacao?: string;
+  operadorCancelamento?: string;
+  dataInativacao?: string;
 }
 
 export interface Tecnico {
@@ -66,6 +70,7 @@ export interface Tecnico {
 export interface Equipamento {
   _id: string;
   identificador: string;
+  imei?: string;
   iccid?: string;
   numeroLinha?: string;
   operadora?: string;
@@ -209,8 +214,11 @@ export const api = {
       mensalidades: Mensalidade[];
       historico: any[];
     }> => request(`/clientes/${id}/panorama`),
-    delete: (id: string): Promise<any> => 
-      request(`/clientes/${id}`, { method: 'DELETE' })
+    delete: (id: string, data?: { motivoInativacao?: string, operadorCancelamento?: string }): Promise<any> => 
+      request(`/clientes/${id}`, { 
+        method: 'DELETE',
+        ...(data ? { body: JSON.stringify(data) } : {})
+      })
   },
 
   // Técnicos

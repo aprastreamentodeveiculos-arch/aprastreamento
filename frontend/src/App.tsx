@@ -7,6 +7,8 @@ import { Topbar } from './components/layout/Topbar';
 import './App.css';
 import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function App() {
   // Controle de Visualização, Autenticação e Perfis
@@ -162,7 +164,7 @@ function App() {
   // -------------------------
 
   // Estados dos formulários de cadastro
-  const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
+  const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10, indicacao: '' });
   const [veiculosCliente, setVeiculosCliente] = useState<{placa: string, marca: string, modelo: string, cor: string, ano: string, rastreadorId: string}[]>([]);
   const [newTecnico, setNewTecnico] = useState({ nome: '', telefone: '' });
   const [newDespesa, setNewDespesa] = useState({ descricao: '', valor: '', data: new Date().toISOString().split('T')[0], categoria: '' });
@@ -213,6 +215,7 @@ function App() {
   const [historicoTipo, setHistoricoTipo] = useState<'veiculo' | 'rastreador'>('veiculo');
   const [filtroMensalidadeCliente, setFiltroMensalidadeCliente] = useState<string>('');
   const [filtroMensalidadeStatus, setFiltroMensalidadeStatus] = useState<string>('todos');
+  const [agruparFinanceiro, setAgruparFinanceiro] = useState<boolean>(true);
 
   // Estados de Busca Global (Buque)
   const [buscaCliente, setBuscaCliente] = useState<string>('');
@@ -409,7 +412,7 @@ function App() {
     try {
       // Cria cliente e veículos
       const createdCliente = await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
-      setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10 });
+      setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10, indicacao: '' });
       setVeiculosCliente([]);
       alert('Cliente e Veículos cadastrados com sucesso!');
       // Carrega ficha do cliente recém‑criado
@@ -607,6 +610,66 @@ function App() {
       }
     }
     setMostrarInativos(!mostrarInativos);
+  };
+
+  const gerarRelatorioChurn = async () => {
+    try {
+      let inativosParaRelatorio = clientesInativos;
+      if (!mostrarInativos || inativosParaRelatorio.length === 0) {
+        inativosParaRelatorio = await api.clientes.list({ ativo: 'false' });
+      }
+
+      if (inativosParaRelatorio.length === 0) {
+        alert('Nenhum cliente inativo encontrado para gerar relatório.');
+        return;
+      }
+
+      const doc = new jsPDF();
+      
+      // Cabecalho
+      doc.setFontSize(18);
+      doc.setTextColor(0, 51, 102);
+      doc.text('AP RASTRO - Relatorio de Cancelamentos (Churn)', 14, 22);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Data de Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
+
+      // Tabela
+      const tableColumn = ["Cliente", "Motivo", "Operador", "Data Inativacao"];
+      const tableRows: any[] = [];
+
+      inativosParaRelatorio.forEach(cliente => {
+        const clienteData = [
+          cliente.nome,
+          cliente.motivoInativacao || 'Nao Informado',
+          cliente.operadorCancelamento || 'Sistema',
+          cliente.dataInativacao ? new Date(cliente.dataInativacao).toLocaleDateString('pt-BR') : 'Desconhecida'
+        ];
+        tableRows.push(clienteData);
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 40,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [0, 51, 102] }
+      });
+
+      // Rodape
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Pagina ${i} de ${pageCount} - Gerado pelo Sistema AP RASTRO`, 14, doc.internal.pageSize.height - 10);
+      }
+
+      doc.save(`relatorio_cancelamentos_${new Date().getTime()}.pdf`);
+    } catch (err) {
+      console.error('Erro ao gerar relatorio PDF', err);
+      alert('Ocorreu um erro ao gerar o PDF.');
+    }
   };
 
   const handleAbrirFichaCliente = async (clienteId: string) => {
@@ -1109,9 +1172,14 @@ function App() {
           <div>
             <div className="view-header">
               <h1>Clientes e Frotas</h1>
-              <button className="btn btn-primary" onClick={() => setCurrentPage('clientes-cadastro')}>
-                + Cadastrar Cliente
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn btn-secondary" onClick={gerarRelatorioChurn}>
+                  📄 Relatório de Cancelamentos
+                </button>
+                <button className="btn btn-primary" onClick={() => setCurrentPage('clientes-cadastro')}>
+                  + Cadastrar Cliente
+                </button>
+              </div>
             </div>
 
             <div className="table-box">
@@ -2414,6 +2482,14 @@ function App() {
                     <button className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setIsMensalidadeModalOpen(true)}>
                       + Nova Mensalidade Avulsa
                     </button>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem', color: 'var(--text-light)', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={agruparFinanceiro} 
+                        onChange={(e) => setAgruparFinanceiro(e.target.checked)} 
+                      />
+                      Agrupar por Cliente
+                    </label>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <input 
@@ -2474,67 +2550,133 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mensalidades
-                        .filter(m => {
+                      {(() => {
+                        const filteredMensalidades = mensalidades.filter(m => {
                           const clienteNome = (m.clienteId?.nome || '').toLowerCase();
                           const busca = filtroMensalidadeCliente.toLowerCase();
                           if (busca && !clienteNome.includes(busca)) return false;
                           if (filtroMensalidadeStatus !== 'todos' && m.status !== filtroMensalidadeStatus) return false;
                           return true;
-                        })
-                        .map(m => (
-                        <tr key={m._id}>
-                          <td>
-                            {m.status !== 'PAGO' && (
-                              <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
-                                if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
-                                else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
-                              }} />
-                            )}
-                          </td>
-                          <td>
-                            <div className="customer-cell">
-                              <div className={`customer-avatar ${getAvatarColor(m.clienteId?._id || '1')}`}>
-                                {getInitials(m.clienteId?.nome || 'N/A')}
-                              </div>
-                              <div className="customer-info">
-                                <span>{m.clienteId?.nome || 'Cliente Removido'}</span>
-                                <small>{m.clienteId?.whatsapp || 'N/A'}</small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <strong>R$ {((m.status === 'PAGO' || m.status === 'PARCIAL') && m.valorPago != null ? m.valorPago : m.valor).toFixed(2)}</strong>
-                            {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.desconto || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--success)'}}>- R$ {Number(m.desconto).toFixed(2)} (desc)</div>}
-                            {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.acrescimo || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--danger)'}}>+ R$ {Number(m.acrescimo).toFixed(2)} (juros)</div>}
-                          </td>
-                          <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
-                          <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
-                          <td>
-                            <span className={`status-badge ${
-                              m.status === 'PAGO' ? 'active' :
-                              m.status === 'PENDENTE' ? 'pending' : 'inactive'
-                            }`}>
-                              {m.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                              {m.status !== 'PAGO' && (
-                                <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleOpenCheckout(m)}>
-                                  💳 Pagar
-                                </button>
-                              )}
-                              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
-                                ✎ Editar
-                              </button>
-                              <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
-                                🗑️ Excluir
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                        });
+
+                        if (!agruparFinanceiro) {
+                          return filteredMensalidades.map(m => (
+                            <tr key={m._id}>
+                              <td>
+                                {m.status !== 'PAGO' && (
+                                  <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
+                                    if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
+                                    else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
+                                  }} />
+                                )}
+                              </td>
+                              <td>
+                                <div className="customer-cell">
+                                  <div className={`customer-avatar ${getAvatarColor(m.clienteId?._id || '1')}`}>
+                                    {getInitials(m.clienteId?.nome || 'N/A')}
+                                  </div>
+                                  <div className="customer-info">
+                                    <span>{m.clienteId?.nome || 'Cliente Removido'}</span>
+                                    <small>{m.clienteId?.whatsapp || 'N/A'}</small>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                <strong>R$ {((m.status === 'PAGO' || m.status === 'PARCIAL') && m.valorPago != null ? m.valorPago : m.valor).toFixed(2)}</strong>
+                                {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.desconto || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--success)'}}>- R$ {Number(m.desconto).toFixed(2)} (desc)</div>}
+                                {(m.status === 'PAGO' || m.status === 'PARCIAL') && (m.acrescimo || 0) > 0 && <div style={{fontSize: '0.75rem', color: 'var(--danger)'}}>+ R$ {Number(m.acrescimo).toFixed(2)} (juros)</div>}
+                              </td>
+                              <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
+                              <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
+                              <td>
+                                <span className={`status-badge ${
+                                  m.status === 'PAGO' ? 'active' :
+                                  m.status === 'PENDENTE' ? 'pending' : 'inactive'
+                                }`}>
+                                  {m.status}
+                                </span>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  {m.status !== 'PAGO' && (
+                                    <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleOpenCheckout(m)}>
+                                      💳 Pagar
+                                    </button>
+                                  )}
+                                  <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
+                                    ✎ Editar
+                                  </button>
+                                  <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
+                                    🗑️ Excluir
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        } else {
+                          const grouped = filteredMensalidades.reduce((acc: any, curr: any) => {
+                            const cId = curr.clienteId?._id || 'desconhecido';
+                            if (!acc[cId]) acc[cId] = { cliente: curr.clienteId, mensalidades: [] };
+                            acc[cId].mensalidades.push(curr);
+                            return acc;
+                          }, {});
+                          return Object.values(grouped).map((group: any) => (
+                            <React.Fragment key={group.cliente?._id || 'desc'}>
+                              <tr style={{ background: 'var(--bg-deep)' }}>
+                                <td colSpan={7} style={{ padding: '0.5rem 1rem' }}>
+                                  <div className="customer-cell" style={{ margin: 0 }}>
+                                    <div className={`customer-avatar ${getAvatarColor(group.cliente?._id || '1')}`}>
+                                      {getInitials(group.cliente?.nome || 'N/A')}
+                                    </div>
+                                    <div className="customer-info">
+                                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{group.cliente?.nome || 'Cliente Removido'}</span>
+                                      <small>{group.cliente?.whatsapp || 'N/A'} - {group.mensalidades.length} fatura(s)</small>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                              {group.mensalidades.map((m: any) => (
+                                <tr key={m._id} style={{ opacity: 0.95 }}>
+                                  <td>
+                                    {m.status !== 'PAGO' && (
+                                      <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
+                                        if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
+                                        else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
+                                      }} />
+                                    )}
+                                  </td>
+                                  <td></td>
+                                  <td>
+                                    <strong>R$ {((m.status === 'PAGO' || m.status === 'PARCIAL') && m.valorPago != null ? m.valorPago : m.valor).toFixed(2)}</strong>
+                                  </td>
+                                  <td>{new Date(m.dataEmissao).toLocaleDateString('pt-BR')}</td>
+                                  <td>{new Date(m.dataVencimento).toLocaleDateString('pt-BR')}</td>
+                                  <td>
+                                    <span className={`status-badge ${m.status === 'PAGO' ? 'active' : m.status === 'PENDENTE' ? 'pending' : 'inactive'}`}>
+                                      {m.status}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                      {m.status !== 'PAGO' && (
+                                        <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => handleOpenCheckout(m)}>
+                                          💳 Pagar
+                                        </button>
+                                      )}
+                                      <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
+                                        ✎
+                                      </button>
+                                      <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
+                                        🗑️
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
+                          ));
+                        }
+                      })()}
                     </tbody>
                   </table>
                 </div>

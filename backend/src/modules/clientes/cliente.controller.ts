@@ -8,7 +8,7 @@ import { Equipamento } from '../equipamentos/equipamento.model';
 
 export const createCliente = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { nome, documento, email, whatsapp, endereco, planoId, diaVencimento, veiculos } = req.body;
+    const { nome, documento, email, whatsapp, endereco, planoId, diaVencimento, indicacao, veiculos } = req.body;
 
     if (!nome || !documento) {
       res.status(400).json({ error: 'Nome e Documento (CPF/CNPJ) são obrigatórios.' });
@@ -29,7 +29,8 @@ export const createCliente = async (req: Request, res: Response): Promise<void> 
       whatsapp,
       endereco: endereco || {},
       planoId: planoId || null,
-      diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : 10
+      diaVencimento: diaVencimento !== undefined ? Number(diaVencimento) : 10,
+      indicacao: indicacao || ''
     });
 
     await novoCliente.save();
@@ -146,7 +147,7 @@ export const getClienteById = async (req: Request, res: Response): Promise<void>
 export const updateCliente = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { nome, documento, email, whatsapp, endereco, ativo } = req.body;
+    const { nome, documento, email, whatsapp, endereco, ativo, indicacao } = req.body;
 
     const cliente = await Cliente.findById(id);
     if (!cliente) {
@@ -169,6 +170,7 @@ export const updateCliente = async (req: Request, res: Response): Promise<void> 
     if (whatsapp !== undefined) cliente.whatsapp = whatsapp;
     if (endereco) cliente.endereco = { ...cliente.endereco, ...endereco };
     if (ativo !== undefined) cliente.ativo = ativo;
+    if (indicacao !== undefined) cliente.indicacao = indicacao;
 
     await cliente.save();
 
@@ -181,9 +183,19 @@ export const updateCliente = async (req: Request, res: Response): Promise<void> 
 export const deleteCliente = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const { motivoInativacao, operadorCancelamento } = req.body;
     
     // Em sistemas ERP, geralmente desativamos o cadastro em vez de apagar do banco físico.
-    const cliente = await Cliente.findByIdAndUpdate(id, { ativo: false }, { returnDocument: 'after' });
+    const cliente = await Cliente.findByIdAndUpdate(
+      id,
+      { 
+        ativo: false,
+        motivoInativacao: motivoInativacao || 'Não informado',
+        operadorCancelamento: operadorCancelamento || 'Sistema',
+        dataInativacao: new Date()
+      },
+      { returnDocument: 'after' }
+    );
 
     if (!cliente) {
       res.status(404).json({ error: 'Cliente não encontrado.' });

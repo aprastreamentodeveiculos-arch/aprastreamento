@@ -16,6 +16,10 @@ export interface ICliente extends Document {
   whatsapp?: string;
   endereco?: IEndereco;
   ativo: boolean;
+  indicacao?: string;
+  motivoInativacao?: string;
+  dataInativacao?: Date;
+  operadorCancelamento?: string;
   planoId?: Types.ObjectId | null;
   diaVencimento: number;
   createdAt: Date;
@@ -38,6 +42,10 @@ const ClienteSchema = new Schema<ICliente>({
   whatsapp: { type: String, trim: true },
   endereco: { type: EnderecoSchema, default: {} },
   ativo: { type: Boolean, default: true, index: true },
+  indicacao: { type: String, trim: true },
+  motivoInativacao: { type: String, trim: true },
+  dataInativacao: { type: Date },
+  operadorCancelamento: { type: String, trim: true },
   planoId: { type: Schema.Types.ObjectId, ref: 'Plano', default: null },
   diaVencimento: { type: Number, default: 10, enum: [5, 10, 15, 20, 25] }
 }, {
