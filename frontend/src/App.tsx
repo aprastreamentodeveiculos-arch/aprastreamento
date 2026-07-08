@@ -143,6 +143,7 @@ function App() {
   const [showInativarModal, setShowInativarModal] = useState(false);
   const [clienteParaInativar, setClienteParaInativar] = useState<string | null>(null);
   const [motivoInativacao, setMotivoInativacao] = useState('');
+  const [detalhesInativacao, setDetalhesInativacao] = useState('');
   
   const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
   const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
@@ -325,9 +326,9 @@ function App() {
   }, [buscaDespesa, filtroDespesaCat, filtroDespesaMes, despesas]);
 
   // Cálculos Financeiros Dinâmicos baseados nos Planos Reais dos Clientes
-  const totalReceitaEstimada = clientes.reduce((acc, c) => {
+  const calcularMRRCliente = (c: any) => {
     const veiculosCount = c.veiculosCount || 0;
-    if (veiculosCount === 0) return acc;
+    if (veiculosCount === 0) return 0;
 
     let valorCliente = veiculosCount * 80.00; // Fallback default
     const plano = c.planoId as any;
@@ -353,9 +354,33 @@ function App() {
 
       valorCliente = valorOriginal;
     }
+    return valorCliente;
+  };
 
-    return acc + valorCliente;
-  }, 0); 
+  const clientesAtivos = clientes.filter(c => c.ativo);
+  const clientesInativos = clientes.filter(c => !c.ativo);
+
+  const totalReceitaEstimada = clientesAtivos.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
+  const mrrPerdido = clientesInativos.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
+  const taxaChurn = clientes.length > 0 ? (clientesInativos.length / clientes.length) * 100 : 0;
+
+  // Dados do Gráfico de Pareto (Regra 80/20)
+  const motivosPareto = clientesInativos.reduce((acc: Record<string, number>, c) => {
+    const motivo = c.motivoInativacao || 'N/A';
+    acc[motivo] = (acc[motivo] || 0) + 1;
+    return acc;
+  }, {});
+
+  const paretoData = Object.entries(motivosPareto)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  let cumulativeCount = 0;
+  const totalInativos = clientesInativos.length;
+  paretoData.forEach(d => {
+    cumulativeCount += d.count;
+    (d as any).cumulativePercent = totalInativos > 0 ? (cumulativeCount / totalInativos) * 100 : 0;
+  }); 
   const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
   const lucroReal = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0) - totalDespesas;
 
@@ -595,16 +620,22 @@ function App() {
   const handleInativarCliente = (clienteId: string) => {
     setClienteParaInativar(clienteId);
     setMotivoInativacao('');
+    setDetalhesInativacao('');
     setShowInativarModal(true);
   };
 
   const confirmInativarCliente = async () => {
     if (!clienteParaInativar) return;
+    if (!motivoInativacao) {
+      alert('Selecione um motivo para o cancelamento.');
+      return;
+    }
     try {
-      const operador = userName || localStorage.getItem('aprastro_user') || 'Sistema';
+      const nomeOperador = user?.nome || 'Operador';
       await api.clientes.delete(clienteParaInativar, { 
-        motivoInativacao: motivoInativacao || 'Não informado pelo operador',
-        operadorCancelamento: operador 
+        motivoInativacao: motivoInativacao,
+        detalhesInativacao: detalhesInativacao,
+        operadorCancelamento: nomeOperador 
       });
       alert('Cliente inativado com sucesso. Ele parará de gerar mensalidades.');
       setShowInativarModal(false);
@@ -1179,6 +1210,9 @@ function App() {
             mensalidadesPendentesCount={mensalidadesPendentesCount}
             mensalidadesAtrasadasCount={mensalidadesAtrasadasCount}
             clientes={clientes}
+            mrrPerdido={mrrPerdido}
+            taxaChurn={taxaChurn}
+            paretoData={paretoData}
             handleAbrirFichaCliente={handleAbrirFichaCliente}
             getAvatarColor={getAvatarColor}
             getInitials={getInitials}
@@ -1452,6 +1486,28 @@ function App() {
                 <span>Vencimento Mensal</span>
                 <strong>Dia {selectedClientePanorama.cliente.diaVencimento || 10}</strong>
               </div>
+              <div className="os-card-col">
+                <span>Status</span>
+                <strong style={{ color: selectedClientePanorama.cliente.ativo ? 'var(--success)' : 'var(--danger)' }}>
+                  {selectedClientePanorama.cliente.ativo ? 'Ativo' : 'Inativo'}
+                </strong>
+              </div>
+              {!selectedClientePanorama.cliente.ativo && (
+                <>
+                  <div className="os-card-col">
+                    <span>Categoria Cancelamento</span>
+                    <strong style={{ color: 'var(--danger)' }}>{selectedClientePanorama.cliente.motivoInativacao || 'N/A'}</strong>
+                  </div>
+                  <div className="os-card-col">
+                    <span>Observações (Detalhes)</span>
+                    <strong>{selectedClientePanorama.cliente.detalhesInativacao || 'Nenhum detalhe informado'}</strong>
+                  </div>
+                  <div className="os-card-col">
+                    <span>Operador do Cancelamento</span>
+                    <strong>{selectedClientePanorama.cliente.operadorCancelamento || 'N/A'}</strong>
+                  </div>
+                </>
+              )}
               <div className="os-card-col" style={{ gridColumn: 'span 2' }}>
                 <span>Endereço Completo</span>
                 <strong>
@@ -3911,14 +3967,31 @@ function App() {
                 <strong>Atenção:</strong> Ao inativar, este cliente parará de gerar novas mensalidades e será removido das métricas principais.
               </div>
               <div className="form-group">
-                <label>Motivo do Cancelamento/Inativação *</label>
-                <textarea 
+                <label>Categoria do Cancelamento *</label>
+                <select 
                   className="input" 
-                  rows={4}
-                  placeholder="Ex: Vendeu o veículo, insatisfação, inadimplência..."
                   value={motivoInativacao}
                   onChange={(e) => setMotivoInativacao(e.target.value)}
                   required
+                >
+                  <option value="" disabled>Selecione um motivo...</option>
+                  <option value="Preço / Custo">Preço / Custo</option>
+                  <option value="Qualidade do Serviço">Qualidade do Serviço / Produto</option>
+                  <option value="Suporte Técnico Ineficaz">Suporte Técnico Ineficaz</option>
+                  <option value="Concorrência">Foi para a Concorrência</option>
+                  <option value="Veículo Vendido">Veículo Vendido / Sinistro</option>
+                  <option value="Inadimplência">Inadimplência</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>Observações Adicionais (Detalhes)</label>
+                <textarea 
+                  className="input" 
+                  rows={3}
+                  placeholder="Forneça detalhes adicionais sobre o cancelamento..."
+                  value={detalhesInativacao}
+                  onChange={(e) => setDetalhesInativacao(e.target.value)}
                 />
               </div>
               <div className="form-actions" style={{ justifyContent: 'flex-end', marginTop: '1.5rem' }}>

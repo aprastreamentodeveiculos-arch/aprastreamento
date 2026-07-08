@@ -183,7 +183,7 @@ export const updateCliente = async (req: Request, res: Response): Promise<void> 
 export const deleteCliente = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { motivoInativacao, operadorCancelamento } = req.body;
+    const { motivoInativacao, detalhesInativacao, operadorCancelamento } = req.body;
     
     // Em sistemas ERP, geralmente desativamos o cadastro em vez de apagar do banco físico.
     const cliente = await Cliente.findByIdAndUpdate(
@@ -191,6 +191,7 @@ export const deleteCliente = async (req: Request, res: Response): Promise<void> 
       { 
         ativo: false,
         motivoInativacao: motivoInativacao || 'Não informado',
+        detalhesInativacao: detalhesInativacao || '',
         operadorCancelamento: operadorCancelamento || 'Sistema',
         dataInativacao: new Date()
       },

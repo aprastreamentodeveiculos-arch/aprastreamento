@@ -54,6 +54,7 @@ export interface Cliente {
   createdAt?: string;
   indicacao?: string;
   motivoInativacao?: string;
+  detalhesInativacao?: string;
   operadorCancelamento?: string;
   dataInativacao?: string;
 }
@@ -214,7 +215,7 @@ export const api = {
       mensalidades: Mensalidade[];
       historico: any[];
     }> => request(`/clientes/${id}/panorama`),
-    delete: (id: string, data?: { motivoInativacao?: string, operadorCancelamento?: string }): Promise<any> => 
+    delete: (id: string, data?: { motivoInativacao?: string, detalhesInativacao?: string, operadorCancelamento?: string }): Promise<any> => 
       request(`/clientes/${id}`, { 
         method: 'DELETE',
         body: data ? JSON.stringify(data) : undefined

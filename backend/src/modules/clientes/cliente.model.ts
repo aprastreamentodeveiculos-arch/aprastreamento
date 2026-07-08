@@ -18,6 +18,7 @@ export interface ICliente extends Document {
   ativo: boolean;
   indicacao?: string;
   motivoInativacao?: string;
+  detalhesInativacao?: string;
   dataInativacao?: Date;
   operadorCancelamento?: string;
   planoId?: Types.ObjectId | null;
@@ -44,6 +45,7 @@ const ClienteSchema = new Schema<ICliente>({
   ativo: { type: Boolean, default: true, index: true },
   indicacao: { type: String, trim: true },
   motivoInativacao: { type: String, trim: true },
+  detalhesInativacao: { type: String, trim: true },
   dataInativacao: { type: Date },
   operadorCancelamento: { type: String, trim: true },
   planoId: { type: Schema.Types.ObjectId, ref: 'Plano', default: null },

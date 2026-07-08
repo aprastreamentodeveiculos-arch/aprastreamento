@@ -1,6 +1,6 @@
 import { StatCard } from './StatCard';
 import type { Cliente } from '../../services/api';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart, Bar, Line, CartesianGrid, Cell } from 'recharts';
 import { useState } from 'react';
 
 interface DashboardProps {
@@ -22,6 +22,9 @@ interface DashboardProps {
   mensalidadesPendentesCount: number;
   mensalidadesAtrasadasCount: number;
   clientes: Cliente[];
+  mrrPerdido: number;
+  taxaChurn: number;
+  paretoData: Array<{ name: string; count: number; cumulativePercent: number }>;
   handleAbrirFichaCliente: (id: string) => void;
   getAvatarColor: (id: string) => string;
   getInitials: (nome: string) => string;
@@ -164,6 +167,65 @@ export function Dashboard(props: DashboardProps) {
                 <span>Atrasadas</span>
               </div>
               <strong>R$ {props.valorMensalidadesAtrasadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.mensalidadesAtrasadasCount})</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', fontWeight: 600 }}>Inteligência de Retenção (Churn)</h2>
+        <div className="dashboard-grid">
+          <StatCard 
+            title="Taxa de Churn Mensal"
+            value={`${props.taxaChurn.toFixed(2)}%`}
+            trendValue=""
+            trendUp={false}
+            iconColorClass="primary"
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5.5"/><path d="M9 11l-4 4 4 4"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
+          />
+          <StatCard 
+            title="MRR Perdido (Evasão)"
+            value={`R$ ${props.mrrPerdido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            trendValue=""
+            trendUp={false}
+            iconColorClass="primary"
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
+          />
+        </div>
+
+        <div className="activity-section" style={{ marginTop: '1.5rem' }}>
+          <div className="card glass-panel" style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3>Gráfico de Pareto: Motivos de Cancelamento (Regra 80/20)</h3>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
+              Identifique os 20% de motivos que causam 80% das saídas para focar esforços.
+            </p>
+            <div style={{ width: '100%', height: 350 }}>
+              {props.paretoData && props.paretoData.length > 0 ? (
+                <ResponsiveContainer>
+                  <ComposedChart data={props.paretoData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                    <XAxis dataKey="name" stroke="#888" tick={{ fontSize: 12 }} angle={-15} textAnchor="end" />
+                    <YAxis yAxisId="left" stroke="#888" label={{ value: 'Quantidade', angle: -90, position: 'insideLeft', fill: '#888' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#39FF14" label={{ value: '% Acumulado', angle: 90, position: 'insideRight', fill: '#39FF14' }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'rgba(10,11,13,0.9)', border: '1px solid #333', borderRadius: '8px' }}
+                      itemStyle={{ color: '#fff' }}
+                    />
+                    <Bar yAxisId="left" dataKey="count" name="Cancelamentos" fill="#FF003C" radius={[4, 4, 0, 0]}>
+                      {props.paretoData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index < 2 ? '#FF003C' : '#FF6B6B'} />
+                      ))}
+                    </Bar>
+                    <Line yAxisId="right" type="monotone" dataKey="cumulativePercent" name="% Acumulado" stroke="#39FF14" strokeWidth={3} dot={{ r: 4, fill: '#39FF14' }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                  Nenhum cancelamento registrado para gerar o gráfico.
+                </div>
+              )}
             </div>
           </div>
         </div>
