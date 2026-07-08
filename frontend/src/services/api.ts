@@ -217,7 +217,7 @@ export const api = {
     delete: (id: string, data?: { motivoInativacao?: string, operadorCancelamento?: string }): Promise<any> => 
       request(`/clientes/${id}`, { 
         method: 'DELETE',
-        ...(data ? { body: JSON.stringify(data) } : {})
+        body: data ? JSON.stringify(data) : undefined
       })
   },
 

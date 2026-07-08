@@ -136,9 +136,14 @@ function App() {
     desconto: 0,
     acrescimo: 0,
     valorPago: 0,
+    dataPagamento: new Date().toISOString().split('T')[0],
     formaPagamento: 'PIX',
     novaDataVencimento: ''
   });
+  const [showInativarModal, setShowInativarModal] = useState(false);
+  const [clienteParaInativar, setClienteParaInativar] = useState<string | null>(null);
+  const [motivoInativacao, setMotivoInativacao] = useState('');
+  
   const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
   const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
   const [selectedMensalidadesGeraisIds, setSelectedMensalidadesGeraisIds] = useState<string[]>([]);
@@ -587,11 +592,23 @@ function App() {
     }
   };
 
-  const handleInativarCliente = async (clienteId: string) => {
-    if (!window.confirm('Tem certeza que deseja INATIVAR este cliente? Ele parará de gerar novas mensalidades e será removido das métricas principais da empresa.')) return;
+  const handleInativarCliente = (clienteId: string) => {
+    setClienteParaInativar(clienteId);
+    setMotivoInativacao('');
+    setShowInativarModal(true);
+  };
+
+  const confirmInativarCliente = async () => {
+    if (!clienteParaInativar) return;
     try {
-      await api.clientes.delete(clienteId);
-      alert('Cliente inativado com sucesso.');
+      const operador = userName || localStorage.getItem('aprastro_user') || 'Sistema';
+      await api.clientes.delete(clienteParaInativar, { 
+        motivoInativacao: motivoInativacao || 'Não informado pelo operador',
+        operadorCancelamento: operador 
+      });
+      alert('Cliente inativado com sucesso. Ele parará de gerar mensalidades.');
+      setShowInativarModal(false);
+      setClienteParaInativar(null);
       setSelectedClientePanorama(null);
       setCurrentPage('clientes');
       carregarDados();
@@ -3877,6 +3894,39 @@ function App() {
                 Confirmar Pagamento e Gerar Protocolo
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL INATIVAR CLIENTE */}
+      {showInativarModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Confirmar Inativação</h2>
+              <button className="close-btn" onClick={() => setShowInativarModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="alert-warning" style={{ background: 'rgba(231, 76, 60, 0.1)', color: 'var(--danger)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                <strong>Atenção:</strong> Ao inativar, este cliente parará de gerar novas mensalidades e será removido das métricas principais.
+              </div>
+              <div className="form-group">
+                <label>Motivo do Cancelamento/Inativação *</label>
+                <textarea 
+                  className="input" 
+                  rows={4}
+                  placeholder="Ex: Vendeu o veículo, insatisfação, inadimplência..."
+                  value={motivoInativacao}
+                  onChange={(e) => setMotivoInativacao(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-actions" style={{ justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button className="btn btn-secondary" onClick={() => setShowInativarModal(false)}>Cancelar</button>
+                <button className="btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={confirmInativarCliente} disabled={!motivoInativacao.trim()}>
+                  Confirmar Inativação
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
