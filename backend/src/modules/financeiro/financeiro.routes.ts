@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import { listFaturas, baixarFaturaManual, checkoutFatura, rodarFaturamentoAutomatico, createFaturaAvulsa, updateFatura, deleteFatura, bulkDeleteFaturas, bulkCheckoutFaturas } from './financeiro.controller';
-import { runMigrationEndpoint, runCleanupEndpoint } from './migration.controller';
 
 const router = Router();
 
 router.get('/', listFaturas);
 router.post('/faturamento-cron', rodarFaturamentoAutomatico);
-router.post('/run-migration', runMigrationEndpoint);
-router.post('/run-cleanup', runCleanupEndpoint);
 router.post('/faturas', createFaturaAvulsa);
 router.post('/faturas/bulk-delete', bulkDeleteFaturas);
 router.post('/faturas/bulk-checkout', bulkCheckoutFaturas);
