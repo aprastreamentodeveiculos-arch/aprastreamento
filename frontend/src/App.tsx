@@ -171,7 +171,22 @@ function App() {
   // -------------------------
 
   // Estados dos formulários de cadastro
-  const [newCliente, setNewCliente] = useState({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10, indicacao: '' });
+  const [newCliente, setNewCliente] = useState({ 
+    nome: '', 
+    documento: '', 
+    email: '', 
+    whatsapp: '', 
+    planoId: '', 
+    diaVencimento: 10,
+    endereco: {
+      rua: '',
+      numero: '',
+      bairro: '',
+      cidade: '',
+      uf: '',
+      cep: ''
+    }
+  });
   const [veiculosCliente, setVeiculosCliente] = useState<{placa: string, marca: string, modelo: string, cor: string, ano: string, rastreadorId: string}[]>([]);
   const [newTecnico, setNewTecnico] = useState({ nome: '', telefone: '' });
   const [newDespesa, setNewDespesa] = useState({ descricao: '', valor: '', data: new Date().toISOString().split('T')[0], categoria: '' });
@@ -274,13 +289,6 @@ function App() {
   useEffect(() => {
     carregarDados();
   }, []);
-
-  // O React Hot Toast e o Lazy Loading real exigiria endpoints dedicados para o Dashboard.
-  // Como otimização imediata anti-lentidão: Carregar apenas uma vez no boot (e não a cada clique de aba).
-  // As funções de salvar/editar já chamam carregarDados() localmente após o sucesso.
-  // useEffect(() => {
-  //   carregarDados();
-  // }, [currentPage]);
 
   // Ao trocar de perfil de usuário, ajusta a página ativa padrão
   useEffect(() => {
@@ -443,9 +451,17 @@ function App() {
     try {
       // Cria cliente e veículos
       const createdCliente = await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
-      setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10, indicacao: '' });
+      toast.success('Cliente cadastrado com sucesso!');
+      setNewCliente({ 
+        nome: '', 
+        documento: '', 
+        email: '', 
+        whatsapp: '', 
+        planoId: '', 
+        diaVencimento: 10,
+        endereco: { rua: '', numero: '', bairro: '', cidade: '', uf: '', cep: '' }
+      });
       setVeiculosCliente([]);
-      toast.success('Cliente e Veículos cadastrados com sucesso!');
       // Carrega ficha do cliente recém‑criado
       const panorama = await api.clientes.panorama(createdCliente._id);
       setSelectedClientePanorama(panorama);
@@ -1373,6 +1389,58 @@ function App() {
                   />
                 </div>
 
+                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Rua / Logradouro</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Av. Paulista"
+                      value={newCliente.endereco?.rua || ''}
+                      onChange={(e) => setNewCliente({ ...newCliente, endereco: { ...newCliente.endereco, rua: e.target.value } })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Número</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 1000"
+                      value={newCliente.endereco?.numero || ''}
+                      onChange={(e) => setNewCliente({ ...newCliente, endereco: { ...newCliente.endereco, numero: e.target.value } })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Bairro</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Bela Vista"
+                      value={newCliente.endereco?.bairro || ''}
+                      onChange={(e) => setNewCliente({ ...newCliente, endereco: { ...newCliente.endereco, bairro: e.target.value } })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Cidade</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: São Paulo"
+                      value={newCliente.endereco?.cidade || ''}
+                      onChange={(e) => setNewCliente({ ...newCliente, endereco: { ...newCliente.endereco, cidade: e.target.value } })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>UF</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: SP"
+                      maxLength={2}
+                      value={newCliente.endereco?.uf || ''}
+                      onChange={(e) => setNewCliente({ ...newCliente, endereco: { ...newCliente.endereco, uf: e.target.value.toUpperCase() } })}
+                    />
+                  </div>
+                </div>
+
                 <div className="form-group">
                   <label>Plano de Cobrança</label>
                   <select
@@ -1512,8 +1580,8 @@ function App() {
               <div className="os-card-col" style={{ gridColumn: 'span 2' }}>
                 <span>Endereço Completo</span>
                 <strong>
-                  {selectedClientePanorama.cliente.endereco
-                    ? `${selectedClientePanorama.cliente.endereco.rua || ''}, ${selectedClientePanorama.cliente.endereco.numero || ''} - ${selectedClientePanorama.cliente.endereco.cidade || ''}/${selectedClientePanorama.cliente.endereco.estado || ''}`
+                  {selectedClientePanorama.cliente.endereco && (selectedClientePanorama.cliente.endereco.rua || selectedClientePanorama.cliente.endereco.cidade)
+                    ? `${selectedClientePanorama.cliente.endereco.rua || ''}, ${selectedClientePanorama.cliente.endereco.numero || ''} - ${selectedClientePanorama.cliente.endereco.cidade || ''}/${selectedClientePanorama.cliente.endereco.uf || selectedClientePanorama.cliente.endereco.estado || ''}`
                     : 'Não informado'}
                 </strong>
               </div>

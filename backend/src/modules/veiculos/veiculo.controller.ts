@@ -65,23 +65,36 @@ export const bulkCreate = async (req: Request, res: Response) => {
       // 2. Trata o Rastreador (Equipamento) se um IMEI for fornecido
       if (imei) {
         let equipamento = await Equipamento.findOne({ identificador: imei });
-        if (equipamento) {
-          // Atualiza o status para INSTALADO
-          equipamento.status = 'INSTALADO';
-          if (iccid && iccid.trim() !== '') {
-            equipamento.iccid = iccid;
-          }
-          await equipamento.save();
-
-          // 3. Gera o Histórico de Instalação para amarrar o Rastreador ao Veículo e torná-lo ativo no dashboard
-          await HistoricoInstalacao.create({
-            veiculoId: novoVeiculo._id,
-            rastreadorId: equipamento._id,
-            tecnicoId: tecnicoSistema._id,
-            dataInstalacao: new Date(),
-            observacao: 'Cadastro em Massa (Migração/Frota)'
+        if (!equipamento) {
+          // Cria o equipamento automaticamente se não existir no estoque (Cadastro Rápido)
+          equipamento = await Equipamento.create({
+            identificador: imei,
+            iccid: iccid || '',
+            status: 'ESTOQUE',
+            ativo: true
           });
         }
+        
+        // Atualiza o status para INSTALADO
+        equipamento.status = 'INSTALADO';
+        if (iccid && iccid.trim() !== '') {
+          equipamento.iccid = iccid;
+        }
+        await equipamento.save();
+
+        // 3. Gera o Histórico de Instalação para amarrar o Rastreador ao Veículo e torná-lo ativo no dashboard
+        let tecnicoSistema = await Tecnico.findOne({ nome: 'SISTEMA BULK' });
+        if (!tecnicoSistema) {
+          tecnicoSistema = await Tecnico.create({ nome: 'SISTEMA BULK', ativo: true });
+        }
+
+        await HistoricoInstalacao.create({
+          veiculoId: novoVeiculo._id,
+          rastreadorId: equipamento._id,
+          tecnicoId: tecnicoSistema._id,
+          dataInstalacao: new Date(),
+          observacao: 'Cadastro Rápido de Frota'
+        });
       }
     }
 
