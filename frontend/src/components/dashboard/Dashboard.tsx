@@ -214,7 +214,7 @@ export function Dashboard(props: DashboardProps) {
                       itemStyle={{ color: '#fff' }}
                     />
                     <Bar yAxisId="left" dataKey="count" name="Cancelamentos" fill="#FF003C" radius={[4, 4, 0, 0]}>
-                      {props.paretoData.map((entry, index) => (
+                      {props.paretoData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={index < 2 ? '#FF003C' : '#FF6B6B'} />
                       ))}
                     </Bar>

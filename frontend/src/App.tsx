@@ -357,26 +357,26 @@ function App() {
     return valorCliente;
   };
 
-  const clientesAtivos = clientes.filter(c => c.ativo);
-  const clientesInativos = clientes.filter(c => !c.ativo);
+  const clientesAtivosFiltered = clientes.filter(c => c.ativo);
+  const clientesInativosFiltered = clientes.filter(c => !c.ativo);
 
-  const totalReceitaEstimada = clientesAtivos.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
-  const mrrPerdido = clientesInativos.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
-  const taxaChurn = clientes.length > 0 ? (clientesInativos.length / clientes.length) * 100 : 0;
+  const totalReceitaEstimada = clientesAtivosFiltered.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
+  const mrrPerdido = clientesInativosFiltered.reduce((acc, c) => acc + calcularMRRCliente(c), 0);
+  const taxaChurn = clientes.length > 0 ? (clientesInativosFiltered.length / clientes.length) * 100 : 0;
 
   // Dados do Gráfico de Pareto (Regra 80/20)
-  const motivosPareto = clientesInativos.reduce((acc: Record<string, number>, c) => {
+  const motivosPareto = clientesInativosFiltered.reduce((acc: Record<string, number>, c) => {
     const motivo = c.motivoInativacao || 'N/A';
     acc[motivo] = (acc[motivo] || 0) + 1;
     return acc;
   }, {});
 
-  const paretoData = Object.entries(motivosPareto)
-    .map(([name, count]) => ({ name, count }))
+  const paretoData: { name: string; count: number; cumulativePercent: number }[] = Object.entries(motivosPareto)
+    .map(([name, count]) => ({ name, count, cumulativePercent: 0 }))
     .sort((a, b) => b.count - a.count);
 
   let cumulativeCount = 0;
-  const totalInativos = clientesInativos.length;
+  const totalInativos = clientesInativosFiltered.length;
   paretoData.forEach(d => {
     cumulativeCount += d.count;
     (d as any).cumulativePercent = totalInativos > 0 ? (cumulativeCount / totalInativos) * 100 : 0;
@@ -631,7 +631,7 @@ function App() {
       return;
     }
     try {
-      const nomeOperador = user?.nome || 'Operador';
+      const nomeOperador = userName || 'Operador';
       await api.clientes.delete(clienteParaInativar, { 
         motivoInativacao: motivoInativacao,
         detalhesInativacao: detalhesInativacao,
