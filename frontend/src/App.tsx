@@ -599,11 +599,35 @@ function App() {
       carregarDados();
     } catch (err: any) {
       const data = err.response?.data;
+      if (data?.requireConfirmation) {
+        const confirmMsg = `Os seguintes IMEIs informados não existem no estoque:\n\n- ${data.imeisInvalidos.join('\n- ')}\n\nOcorreu algum erro de digitação? Se sim, clique em "Cancelar" para corrigir.\nSe os IMEIs estiverem corretos, clique em "OK" para criá-los automaticamente no estoque.`;
+        if (window.confirm(confirmMsg)) {
+          try {
+            await api.veiculos.bulkCreate({
+              clienteId: selectedClientePanorama.cliente._id,
+              veiculos: veiculosValidos,
+              forceCreate: true
+            });
+            toast.success('Frota e rastreadores cadastrados com sucesso!');
+            setIsAddingFrota(false);
+            setFrotaRows([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }]);
+            const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
+            setSelectedClientePanorama(panorama);
+            carregarDados();
+            return;
+          } catch (err2: any) {
+            toast.error('Erro ao forçar criação da frota:\n' + (err2.response?.data?.message || err2.message));
+            return;
+          }
+        }
+        return;
+      }
+      
       let msg = data?.message || err.message;
       if (data?.imeisInvalidos?.length > 0) {
         msg += '\n\nIMEIs não encontrados no estoque:\n- ' + data.imeisInvalidos.join('\n- ');
       }
-      toast.success('Erro ao salvar frota:\n' + msg);
+      toast.error('Erro ao salvar frota:\n' + msg);
     }
   };
 

@@ -255,7 +255,7 @@ export const api = {
 
   // Veículos
   veiculos: {
-    bulkCreate: (data: { clienteId: string, veiculos: any[] }) =>
+    bulkCreate: (data: { clienteId: string, veiculos: any[], forceCreate?: boolean }) =>
       request('/veiculos/bulk', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<any>): Promise<any> =>
       request(`/veiculos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

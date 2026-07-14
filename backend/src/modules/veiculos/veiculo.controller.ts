@@ -7,7 +7,7 @@ import { Cliente } from '../clientes/cliente.model';
 
 export const bulkCreate = async (req: Request, res: Response) => {
   try {
-    const { clienteId, veiculos } = req.body;
+    const { clienteId, veiculos, forceCreate } = req.body;
 
     if (!clienteId || !Array.isArray(veiculos) || veiculos.length === 0) {
       return res.status(400).json({ message: 'Cliente ID e lista de veículos são obrigatórios' });
@@ -26,9 +26,10 @@ export const bulkCreate = async (req: Request, res: Response) => {
       
       const imeisNaoEncontrados = imeisInformados.filter((imei: string) => !imeisExistentes.includes(imei));
       
-      if (imeisNaoEncontrados.length > 0) {
+      if (imeisNaoEncontrados.length > 0 && !forceCreate) {
         return res.status(400).json({ 
-          message: 'Os seguintes rastreadores (IMEI) não existem no estoque. Cadastre-os primeiro!', 
+          message: 'Alguns rastreadores informados não foram encontrados no estoque.', 
+          requireConfirmation: true,
           imeisInvalidos: imeisNaoEncontrados 
         });
       }
