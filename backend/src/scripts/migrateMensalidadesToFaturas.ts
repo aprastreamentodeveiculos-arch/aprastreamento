@@ -28,7 +28,7 @@ const MensalidadeLegada = mongoose.model('Mensalidade', MensalidadeLegadaSchema,
 async function runMigration() {
   try {
     console.log('Conectando ao MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI as string);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI) as string);
     console.log('Conectado. Iniciando migração...');
 
     const clientes = await Cliente.find();
