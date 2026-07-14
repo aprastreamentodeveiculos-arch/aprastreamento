@@ -716,7 +716,7 @@ function App() {
       doc.save(`relatorio_cancelamentos_${new Date().getTime()}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar relatorio PDF', err);
-      toast.error( um erro);
+      toast.error('Erro ao gerar relatório');
     }
   };
 
