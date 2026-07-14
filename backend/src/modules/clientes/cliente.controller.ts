@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
+import { Assinatura } from '../financeiro/assinatura.model';
 import { Cliente } from './cliente.model';
 import { Veiculo } from '../veiculos/veiculo.model';
 import { HistoricoInstalacao } from '../historico/historico.model';
-import { Mensalidade } from '../financeiro/mensalidade.model';
+import { Fatura } from '../financeiro/mensalidade.model';
 import { Plano } from '../planos/plano.model';
 import { Equipamento } from '../equipamentos/equipamento.model';
 
@@ -203,7 +204,7 @@ export const deleteCliente = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Cancelar as mensalidades pendentes deste cliente para que não fiquem ativas no faturamento
+    // Cancelar as faturas pendentes deste cliente para que não fiquem ativas no faturamento
     await Mensalidade.updateMany(
       { clienteId: id, status: 'PENDENTE' },
       { $set: { status: 'CANCELADO', observacao: 'Cliente inativado.' } }
@@ -225,25 +226,19 @@ export const getClientePanorama = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Buscar em paralelo: veículos, mensalidades do cliente
-    const [veiculos, mensalidades] = await Promise.all([
-      Veiculo.find({ clienteId: id }).sort({ placa: 1 }).lean(),
-      Mensalidade.find({ clienteId: id }).sort({ dataVencimento: -1 }).lean()
-    ]);
+    const veiculos = await Veiculo.find({ clienteId: id });
+    const faturas = await Fatura.find({ clienteId: id }).sort({ dataVencimento: -1 });
+    const assinatura = await Assinatura.findOne({ clienteId: id });
 
-    // Buscar histórico de instalações de todos os veículos desse cliente
-    const veiculoIds = veiculos.map(v => v._id);
-    const historico = await HistoricoInstalacao.find({ veiculoId: { $in: veiculoIds } })
-      .populate('veiculoId', 'placa')
-      .populate('rastreadorId', 'identificador marca modelo iccid operadora numeroLinha')
-      .populate('tecnicoId', 'nome')
-      .sort({ dataInstalacao: -1 })
-      .lean();
+    // Pega historico de todos os veiculos desse cliente
+    const veiculoIds = veiculos.map((v) => v._id);
+    const historico = await HistoricoInstalacao.find({ veiculoId: { $in: veiculoIds } }).sort({ dataInstalacao: -1 }).populate('tecnicoId', 'nome');
 
     res.status(200).json({
+      assinatura,
       cliente,
       veiculos,
-      mensalidades,
+      faturas,
       historico
     });
   } catch (error: any) {

@@ -1,16 +1,16 @@
 import { Router } from 'express';
-import { listMensalidades, baixarMensalidadeManual, checkoutMensalidade, rodarFaturamentoAutomatico, createMensalidadeAvulsa, updateMensalidade, deleteMensalidade, bulkDeleteMensalidades, bulkCheckoutMensalidades } from './financeiro.controller';
+import { listFaturas, baixarFaturaManual, checkoutFatura, rodarFaturamentoAutomatico, createFaturaAvulsa, updateFatura, deleteFatura, bulkDeleteFaturas, bulkCheckoutFaturas } from './financeiro.controller';
 
 const router = Router();
 
-router.get('/', listMensalidades);
+router.get('/', listFaturas);
 router.post('/faturamento-cron', rodarFaturamentoAutomatico);
-router.post('/mensalidades', createMensalidadeAvulsa);
-router.post('/mensalidades/bulk-delete', bulkDeleteMensalidades);
-router.post('/mensalidades/bulk-checkout', bulkCheckoutMensalidades);
-router.put('/mensalidades/:id', updateMensalidade);
-router.delete('/mensalidades/:id', deleteMensalidade);
-router.put('/:id/baixar', baixarMensalidadeManual);
-router.post('/:id/checkout', checkoutMensalidade);
+router.post('/faturas', createFaturaAvulsa);
+router.post('/faturas/bulk-delete', bulkDeleteFaturas);
+router.post('/faturas/bulk-checkout', bulkCheckoutFaturas);
+router.put('/faturas/:id', updateFatura);
+router.delete('/faturas/:id', deleteFatura);
+router.put('/:id/baixar', baixarFaturaManual);
+router.post('/:id/checkout', checkoutFatura);
 
 export default router;

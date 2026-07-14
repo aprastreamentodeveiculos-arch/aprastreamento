@@ -94,7 +94,7 @@ export interface OrdemServico {
   motivoRejeicao?: string;
 }
 
-export interface Mensalidade {
+export interface Fatura {
   _id: string;
   clienteId: { _id: string; nome: string; documento: string; whatsapp: string };
   dataVencimento: string;
@@ -212,7 +212,7 @@ export const api = {
     panorama: (id: string): Promise<{
       cliente: Cliente;
       veiculos: any[];
-      mensalidades: Mensalidade[];
+      faturas: Fatura[];
       historico: any[];
     }> => request(`/clientes/${id}/panorama`),
     delete: (id: string, data?: { motivoInativacao?: string, detalhesInativacao?: string, operadorCancelamento?: string }): Promise<any> => 
@@ -301,7 +301,7 @@ export const api = {
 
   // Financeiro (Mensalidades)
   financeiro: {
-    list: (filtros?: { status?: string; clienteId?: string }): Promise<Mensalidade[]> => {
+    list: (filtros?: { status?: string; clienteId?: string }): Promise<Fatura[]> => {
       const params = new URLSearchParams();
       if (filtros?.status) params.append('status', filtros.status);
       if (filtros?.clienteId) params.append('clienteId', filtros.clienteId);
@@ -312,11 +312,11 @@ export const api = {
     checkout: (id: string, data: any): Promise<any> => request(`/financeiro/${id}/checkout`, { method: 'POST', body: JSON.stringify(data) }),
     faturarCron: (): Promise<{ message: string; faturasGeradas: number }> => 
       request('/financeiro/faturamento-cron', { method: 'POST' }),
-    createAvulsa: (data: any): Promise<any> => request('/financeiro/mensalidades', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: any): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: (id: string): Promise<any> => request(`/financeiro/mensalidades/${id}`, { method: 'DELETE' }),
-    bulkDelete: (ids: string[]): Promise<any> => request('/financeiro/mensalidades/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
-    bulkCheckout: (ids: string[], formaPagamento: string): Promise<any> => request('/financeiro/mensalidades/bulk-checkout', { method: 'POST', body: JSON.stringify({ ids, formaPagamento }) })
+    createAvulsa: (data: any): Promise<any> => request('/financeiro/faturas', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: any): Promise<any> => request(`/financeiro/faturas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string): Promise<any> => request(`/financeiro/faturas/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]): Promise<any> => request('/financeiro/faturas/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+    bulkCheckout: (ids: string[], formaPagamento: string): Promise<any> => request('/financeiro/faturas/bulk-checkout', { method: 'POST', body: JSON.stringify({ ids, formaPagamento }) })
   },
 
   // Caixa (Despesas e Categorias)

@@ -5,7 +5,7 @@ import { GestaoUsuarios } from './components/GestaoUsuarios';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { Topbar } from './components/layout/Topbar';
 import './App.css';
-import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Mensalidade, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
+import { api, type Cliente, type Tecnico, type Equipamento, type OrdemServico, type Fatura, type Despesa, type CategoriaDespesa, type Plano, type FaixaPreco } from './services/api';
 import { maskCpfCnpj, maskTelefone, maskPlaca } from './utils/masks';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -47,7 +47,7 @@ function App() {
 
   // Estados dos Planos
   const [planos, setPlanos] = useState<Plano[]>([]);
-  const [financeiroTab, setFinanceiroTab] = useState<'mensalidades' | 'planos'>('mensalidades');
+  const [financeiroTab, setFinanceiroTab] = useState<'faturas' | 'planos'>('faturas');
   const [isCriandoPlano, setIsCriandoPlano] = useState<boolean>(false);
   const [newPlano, setNewPlano] = useState({
     nome: '',
@@ -128,10 +128,10 @@ function App() {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [categorias, setCategorias] = useState<CategoriaDespesa[]>([]);
-  const [mensalidades, setMensalidades] = useState<Mensalidade[]>([]);
-  const [isMensalidadeModalOpen, setIsMensalidadeModalOpen] = useState(false);
-  const [editMensalidade, setEditMensalidade] = useState<any>(null);
-  const [checkoutMensalidadeId, setCheckoutMensalidadeId] = useState<any>(null);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [isFaturaModalOpen, setIsFaturaModalOpen] = useState(false);
+  const [editFatura, setEditFatura] = useState<any>(null);
+  const [checkoutFaturaId, setCheckoutFaturaId] = useState<any>(null);
   const [checkoutData, setCheckoutData] = useState({
     desconto: 0,
     acrescimo: 0,
@@ -145,9 +145,9 @@ function App() {
   const [motivoInativacao, setMotivoInativacao] = useState('');
   const [detalhesInativacao, setDetalhesInativacao] = useState('');
   
-  const [newMensalidade, setNewMensalidade] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
-  const [selectedMensalidadesIds, setSelectedMensalidadesIds] = useState<string[]>([]);
-  const [selectedMensalidadesGeraisIds, setSelectedMensalidadesGeraisIds] = useState<string[]>([]);
+  const [newFatura, setNewFatura] = useState({ clienteId: '', valor: '', dataVencimento: new Date().toISOString().split('T')[0], status: 'PENDENTE', observacao: '' });
+  const [selectedFaturasIds, setSelectedFaturasIds] = useState<string[]>([]);
+  const [selectedFaturasGeraisIds, setSelectedFaturasGeraisIds] = useState<string[]>([]);
 
   // --- MÁSCARAS DE INPUT ---
   // @ts-ignore
@@ -219,8 +219,8 @@ function App() {
   const [buscaHistorico, setBuscaHistorico] = useState<string>('');
   const [historicoResult, setHistoricoResult] = useState<string[]>([]);
   const [historicoTipo, setHistoricoTipo] = useState<'veiculo' | 'rastreador'>('veiculo');
-  const [filtroMensalidadeCliente, setFiltroMensalidadeCliente] = useState<string>('');
-  const [filtroMensalidadeStatus, setFiltroMensalidadeStatus] = useState<string>('todos');
+  const [filtroFaturaCliente, setFiltroFaturaCliente] = useState<string>('');
+  const [filtroFaturaStatus, setFiltroFaturaStatus] = useState<string>('todos');
   const [agruparFinanceiro, setAgruparFinanceiro] = useState<boolean>(true);
 
   // Estados de Busca Global (Buque)
@@ -242,7 +242,7 @@ function App() {
   // Carregar dados gerais do banco de dados
   const carregarDados = async () => {
     try {
-      const [dataClientes, dataTecnicos, dataEquipamentos, dataOrdens, dataCategorias, dataMensalidades, dataPlanos] = await Promise.all([
+      const [dataClientes, dataTecnicos, dataEquipamentos, dataOrdens, dataCategorias, dataFaturas, dataPlanos] = await Promise.all([
         api.clientes.list(),
         api.tecnicos.list(),
         api.equipamentos.list(),
@@ -257,7 +257,7 @@ function App() {
       setEquipamentos(dataEquipamentos);
       setOrdens(dataOrdens);
       setCategorias(dataCategorias);
-      setMensalidades(dataMensalidades);
+      setFaturas(dataFaturas);
       setPlanos(dataPlanos);
 
       // Setar categoria inicial se houver
@@ -382,7 +382,7 @@ function App() {
     (d as any).cumulativePercent = totalInativos > 0 ? (cumulativeCount / totalInativos) * 100 : 0;
   }); 
   const totalDespesas = despesas.reduce((acc, d) => acc + d.valor, 0);
-  const lucroReal = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0) - totalDespesas;
+  const lucroReal = faturas.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0) - totalDespesas;
 
   // Filtrar dados por mês (Abril, Maio, Junho de 2026) para o gráfico de fluxo de caixa
   const obterFluxoMes = (mesZeroIndexed: number) => {
@@ -391,7 +391,7 @@ function App() {
       return data.getFullYear() === 2026 && data.getMonth() === mesZeroIndexed;
     }).reduce((acc, d) => acc + d.valor, 0);
 
-    const recMes = mensalidades.filter(m => {
+    const recMes = faturas.filter(m => {
       const data = new Date(m.dataPagamento || m.dataVencimento);
       return data.getFullYear() === 2026 && data.getMonth() === mesZeroIndexed && m.status === 'PAGO';
     }).reduce((acc, m) => acc + m.valor, 0);
@@ -416,19 +416,19 @@ function App() {
     (typeof o.tecnicoId === 'string' ? o.tecnicoId === tecnicoLogadoParaAgendamentos?._id : o.tecnicoId?._id === tecnicoLogadoParaAgendamentos?._id)
   );
 
-  // Métricas do Donut Financeiro de Mensalidades (Contagem e Valores em Reais R$)
-  const mensalidadesPagasCount = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').length;
-  const mensalidadesPendentesCount = mensalidades.filter(m => m.status === 'PENDENTE').length;
-  const mensalidadesAtrasadasCount = mensalidades.filter(m => m.status === 'ATRASADO').length;
+  // Métricas do Donut Financeiro de Faturas (Contagem e Valores em Reais R$)
+  const faturasPagasCount = faturas.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').length;
+  const faturasPendentesCount = faturas.filter(m => m.status === 'PENDENTE').length;
+  const faturasAtrasadasCount = faturas.filter(m => m.status === 'ATRASADO').length;
 
-  const valorMensalidadesPagas = mensalidades.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0);
-  const valorMensalidadesPendentes = mensalidades.filter(m => m.status === 'PENDENTE').reduce((acc, m) => acc + m.valor, 0);
-  const valorMensalidadesAtrasadas = mensalidades.filter(m => m.status === 'ATRASADO').reduce((acc, m) => acc + m.valor, 0);
+  const valorFaturasPagas = faturas.filter(m => m.status === 'PAGO' || m.status === 'PARCIAL').reduce((acc, m) => acc + (m.valorPago != null ? m.valorPago : m.valor), 0);
+  const valorFaturasPendentes = faturas.filter(m => m.status === 'PENDENTE').reduce((acc, m) => acc + m.valor, 0);
+  const valorFaturasAtrasadas = faturas.filter(m => m.status === 'ATRASADO').reduce((acc, m) => acc + m.valor, 0);
 
-  const totalValorMensalidades = valorMensalidadesPagas + valorMensalidadesPendentes + valorMensalidadesAtrasadas;
-  const pctPagas = totalValorMensalidades > 0 ? (valorMensalidadesPagas / totalValorMensalidades) : 0;
-  const pctPendentes = totalValorMensalidades > 0 ? (valorMensalidadesPendentes / totalValorMensalidades) : 0;
-  const pctAtrasadas = totalValorMensalidades > 0 ? (valorMensalidadesAtrasadas / totalValorMensalidades) : 0;
+  const totalValorFaturas = valorFaturasPagas + valorFaturasPendentes + valorFaturasAtrasadas;
+  const pctPagas = totalValorFaturas > 0 ? (valorFaturasPagas / totalValorFaturas) : 0;
+  const pctPendentes = totalValorFaturas > 0 ? (valorFaturasPendentes / totalValorFaturas) : 0;
+  const pctAtrasadas = totalValorFaturas > 0 ? (valorFaturasAtrasadas / totalValorFaturas) : 0;
 
   // offsets do Donut segmentado (Pagas, Pendentes, Atrasadas)
   const offsetPagas = 251.2 * (1 - pctPagas);
@@ -444,7 +444,7 @@ function App() {
       const createdCliente = await api.clientes.create({ ...newCliente, veiculos: veiculosCliente });
       setNewCliente({ nome: '', documento: '', email: '', whatsapp: '', planoId: '', diaVencimento: 10, indicacao: '' });
       setVeiculosCliente([]);
-      alert('Cliente e Veículos cadastrados com sucesso!');
+      toast.success('Cliente e Veículos cadastrados com sucesso!');
       // Carrega ficha do cliente recém‑criado
       const panorama = await api.clientes.panorama(createdCliente._id);
       setSelectedClientePanorama(panorama);
@@ -453,7 +453,7 @@ function App() {
       setCurrentPage('clientes-ficha'); // Redireciona para a ficha com aba veículos aberta
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao cadastrar cliente: ' + err.message);
+      toast.success('Erro ao cadastrar cliente: ' + err.message);
     }
   };
 
@@ -464,11 +464,11 @@ function App() {
     try {
       await api.tecnicos.create(newTecnico);
       setNewTecnico({ nome: '', telefone: '' });
-      alert('Técnico cadastrado com sucesso!');
+      toast.success('Técnico cadastrado com sucesso!');
       carregarDados();
       setCurrentPage('tecnicos'); // Redireciona de volta para a listagem
     } catch (err: any) {
-      alert('Erro ao cadastrar técnico: ' + err.message);
+      toast.success('Erro ao cadastrar técnico: ' + err.message);
     }
   };
 
@@ -489,11 +489,11 @@ function App() {
         data: new Date().toISOString().split('T')[0], 
         categoria: categorias[0]?._id || '' 
       });
-      alert('Despesa lançada com sucesso!');
+      toast.success('Despesa lançada com sucesso!');
       carregarDados();
       setCurrentPage('caixa'); // Redireciona de volta para a listagem
     } catch (err: any) {
-      alert('Erro ao lançar despesa: ' + err.message);
+      toast.success('Erro ao lançar despesa: ' + err.message);
     }
   };
 
@@ -507,9 +507,9 @@ function App() {
         ...prev,
         fotosUrls: [...prev.fotosUrls, res.url]
       }));
-      alert('Foto carregada com sucesso!');
+      toast.success('Foto carregada com sucesso!');
     } catch (err: any) {
-      alert('Erro ao enviar foto: ' + err.message);
+      toast.success('Erro ao enviar foto: ' + err.message);
     }
   };
 
@@ -517,14 +517,14 @@ function App() {
   const handleSendOS = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOS.placa || !newOS.clienteId || !newOS.rastreadorId) {
-      alert('Preencha os campos obrigatórios.');
+      toast.error();
       return;
     }
 
     // Achar o técnico logado
     const tecnicoLogado = tecnicos.find(t => t.nome === userName);
     if (!tecnicoLogado) {
-      alert('Erro: Técnico não identificado no sistema.');
+      toast.error();
       return;
     }
 
@@ -535,7 +535,7 @@ function App() {
           observacoes: newOS.observacoes,
           fotosUrls: newOS.fotosUrls
         });
-        alert('Instalação da O.S. Agendada enviada com sucesso para homologação!');
+        toast.success('Instalação da O.S. Agendada enviada com sucesso para homologação!');
       } else {
         // Criar uma nova O.S. avulsa
         await api.ordens.create({
@@ -546,14 +546,14 @@ function App() {
           observacoes: newOS.observacoes,
           fotosUrls: newOS.fotosUrls
         });
-        alert('Ordem de serviço avulsa enviada para aprovação do Administrador!');
+        toast.success('Ordem de serviço avulsa enviada para aprovação do Administrador!');
       }
       setSelectedOSId('avulsa');
       setNewOS({ placa: '', clienteId: '', rastreadorId: '', observacoes: '', fotosUrls: [] });
       carregarDados();
       setCurrentPage('tecnico-caixa');
     } catch (err: any) {
-      alert('Erro ao enviar O.S.: ' + err.message);
+      toast.success('Erro ao enviar O.S.: ' + err.message);
     }
   };
 
@@ -563,7 +563,7 @@ function App() {
     // Filtra apenas linhas que tenham a placa preenchida (obrigatório)
     const veiculosValidos = frotaRows.filter(r => r.placa.trim() !== '');
     if (veiculosValidos.length === 0) {
-      alert('Preencha ao menos a placa de um veículo.');
+      toast.error();
       return;
     }
 
@@ -572,7 +572,7 @@ function App() {
         clienteId: selectedClientePanorama.cliente._id,
         veiculos: veiculosValidos
       });
-      alert('Frota cadastrada com sucesso!');
+      toast.success('Frota cadastrada com sucesso!');
       setIsAddingFrota(false);
       setFrotaRows([{ placa: '', marca: '', modelo: '', cor: '', ano: '', imei: '', iccid: '' }]);
       
@@ -586,14 +586,14 @@ function App() {
       if (data?.imeisInvalidos?.length > 0) {
         msg += '\n\nIMEIs não encontrados no estoque:\n- ' + data.imeisInvalidos.join('\n- ');
       }
-      alert('Erro ao salvar frota:\n' + msg);
+      toast.success('Erro ao salvar frota:\n' + msg);
     }
   };
 
   const handleScheduleOS = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!scheduleOS.clienteId || !scheduleOS.placa || !scheduleOS.tecnicoId || !scheduleOS.rastreadorId) {
-      alert('Preencha os campos obrigatórios.');
+      toast.error();
       return;
     }
 
@@ -608,12 +608,12 @@ function App() {
         fotosUrls: []
       });
 
-      alert('Instalação agendada e enviada para a Caixa de Entrada do Técnico!');
+      toast.success('Instalação agendada e enviada para a Caixa de Entrada do Técnico!');
       setScheduleOS({ clienteId: '', placa: '', tecnicoId: '', rastreadorId: '', observacoes: '' });
       carregarDados();
       setCurrentPage('ordens');
     } catch (err: any) {
-      alert('Erro ao agendar O.S.: ' + err.message);
+      toast.success('Erro ao agendar O.S.: ' + err.message);
     }
   };
 
@@ -627,7 +627,7 @@ function App() {
   const confirmInativarCliente = async () => {
     if (!clienteParaInativar) return;
     if (!motivoInativacao) {
-      alert('Selecione um motivo para o cancelamento.');
+      toast.error();
       return;
     }
     try {
@@ -637,14 +637,14 @@ function App() {
         detalhesInativacao: detalhesInativacao,
         operadorCancelamento: nomeOperador 
       });
-      alert('Cliente inativado com sucesso. Ele parará de gerar mensalidades.');
+      toast.success('Cliente inativado com sucesso. Ele parará de gerar faturas.');
       setShowInativarModal(false);
       setClienteParaInativar(null);
       setSelectedClientePanorama(null);
       setCurrentPage('clientes');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao inativar cliente: ' + err.message);
+      toast.success('Erro ao inativar cliente: ' + err.message);
     }
   };
 
@@ -668,7 +668,7 @@ function App() {
       }
 
       if (inativosParaRelatorio.length === 0) {
-        alert('Nenhum cliente inativo encontrado para gerar relatório.');
+        toast.success('Nenhum cliente inativo encontrado para gerar relatório.');
         return;
       }
 
@@ -716,7 +716,7 @@ function App() {
       doc.save(`relatorio_cancelamentos_${new Date().getTime()}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar relatorio PDF', err);
-      alert('Ocorreu um erro ao gerar o PDF.');
+      toast.error( um erro);
     }
   };
 
@@ -727,7 +727,7 @@ function App() {
       setFichaTab('veiculos');
       setCurrentPage('clientes-ficha');
     } catch (err: any) {
-      alert('Erro ao carregar a ficha do cliente: ' + err.message);
+      toast.success('Erro ao carregar a ficha do cliente: ' + err.message);
     }
   };
 
@@ -735,10 +735,10 @@ function App() {
   const handleApproveOS = async (osId: string) => {
     try {
       await api.ordens.approve(osId);
-      alert('Instalação aprovada e veículo ativo no faturamento!');
+      toast.success('Instalação aprovada e veículo ativo no faturamento!');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao aprovar O.S.: ' + err.message);
+      toast.success('Erro ao aprovar O.S.: ' + err.message);
     }
   };
 
@@ -748,60 +748,60 @@ function App() {
     if (!motivo) return;
     try {
       await api.ordens.reject(osId, motivo);
-      alert('Ordem de serviço devolvida ao técnico!');
+      toast.success('Ordem de serviço devolvida ao técnico!');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao rejeitar O.S.: ' + err.message);
+      toast.success('Erro ao rejeitar O.S.: ' + err.message);
     }
   };
 
-  const handleCreateMensalidade = async (e: React.FormEvent) => {
+  const handleCreateFatura = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await api.financeiro.createAvulsa(newMensalidade);
-      alert('Mensalidade avulsa criada com sucesso!');
-      setIsMensalidadeModalOpen(false);
+      await api.financeiro.createAvulsa(newFatura);
+      toast.success('Fatura avulsa criada com sucesso!');
+      setIsFaturaModalOpen(false);
       carregarDados();
     } catch (err: any) {
-      alert('Erro: ' + err.message);
+      toast.success('Erro: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEditMensalidadeSubmit = async (e: React.FormEvent) => {
+  const handleEditFaturaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editMensalidade || isSubmitting) return;
+    if (!editFatura || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await api.financeiro.update(editMensalidade._id, {
-        valor: editMensalidade.valor,
-        dataVencimento: editMensalidade.dataVencimento,
-        status: editMensalidade.status,
-        observacao: editMensalidade.observacao
+      await api.financeiro.update(editFatura._id, {
+        valor: editFatura.valor,
+        dataVencimento: editFatura.dataVencimento,
+        status: editFatura.status,
+        observacao: editFatura.observacao
       });
-      alert('Mensalidade atualizada com sucesso!');
-      setEditMensalidade(null);
+      toast.success('Fatura atualizada com sucesso!');
+      setEditFatura(null);
       carregarDados();
     } catch (err: any) {
-      alert('Erro: ' + err.message);
+      toast.success('Erro: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteMensalidade = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta mensalidade?')) return;
+  const handleDeleteFatura = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta fatura?')) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
       await api.financeiro.delete(id);
-      alert('Mensalidade excluída com sucesso!');
+      toast.success('Fatura excluída com sucesso!');
       carregarDados();
     } catch (err: any) {
-      alert('Erro: ' + err.message);
+      toast.success('Erro: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -809,56 +809,56 @@ function App() {
 
   
   const handleBulkCheckout = async () => {
-    if (selectedMensalidadesGeraisIds.length === 0) return;
-    if (confirm(`Confirmar baixa (pagamento) de ${selectedMensalidadesGeraisIds.length} fatura(s)?`)) {
+    if (selectedFaturasGeraisIds.length === 0) return;
+    if (confirm(`Confirmar baixa (pagamento) de ${selectedFaturasGeraisIds.length} fatura(s)?`)) {
       try {
-        await api.financeiro.bulkCheckout(selectedMensalidadesGeraisIds, 'Massa');
-        alert('Faturas baixadas com sucesso!');
-        setSelectedMensalidadesGeraisIds([]);
+        await api.financeiro.bulkCheckout(selectedFaturasGeraisIds, 'Massa');
+        toast.success('Faturas baixadas com sucesso!');
+        setSelectedFaturasGeraisIds([]);
         carregarDados();
       } catch (err: any) {
-        alert('Erro ao dar baixa nas faturas: ' + err.message);
+        toast.success('Erro ao dar baixa nas faturas: ' + err.message);
       }
     }
   };
 
   const handleBulkDelete = async () => {
-    if (selectedMensalidadesGeraisIds.length === 0) return;
-    if (confirm(`Atenção: Você está prestes a EXCLUIR ${selectedMensalidadesGeraisIds.length} fatura(s). Esta ação não pode ser desfeita. Confirmar exclusão?`)) {
+    if (selectedFaturasGeraisIds.length === 0) return;
+    if (confirm(`Atenção: Você está prestes a EXCLUIR ${selectedFaturasGeraisIds.length} fatura(s). Esta ação não pode ser desfeita. Confirmar exclusão?`)) {
       try {
-        await api.financeiro.bulkDelete(selectedMensalidadesGeraisIds);
-        alert('Faturas excluídas com sucesso!');
-        setSelectedMensalidadesGeraisIds([]);
+        await api.financeiro.bulkDelete(selectedFaturasGeraisIds);
+        toast.success('Faturas excluídas com sucesso!');
+        setSelectedFaturasGeraisIds([]);
         carregarDados();
       } catch (err: any) {
-        alert('Erro ao excluir as faturas: ' + err.message);
+        toast.success('Erro ao excluir as faturas: ' + err.message);
       }
     }
   };
 
-  const handleBulkDeleteMensalidades = async () => {
-    if (selectedMensalidadesIds.length === 0) return;
-    if (!window.confirm(`Tem certeza que deseja excluir as ${selectedMensalidadesIds.length} mensalidades selecionadas?`)) return;
+  const handleBulkDeleteFaturas = async () => {
+    if (selectedFaturasIds.length === 0) return;
+    if (!window.confirm(`Tem certeza que deseja excluir as ${selectedFaturasIds.length} faturas selecionadas?`)) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await api.financeiro.bulkDelete(selectedMensalidadesIds);
-      alert('Mensalidades excluídas com sucesso!');
-      setSelectedMensalidadesIds([]);
+      await api.financeiro.bulkDelete(selectedFaturasIds);
+      toast.success('Faturas excluídas com sucesso!');
+      setSelectedFaturasIds([]);
       carregarDados();
       if (selectedClientePanorama) {
         const panorama = await api.clientes.panorama(selectedClientePanorama.cliente._id);
         setSelectedClientePanorama(panorama);
       }
     } catch (err: any) {
-      alert('Erro: ' + err.message);
+      toast.success('Erro: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleOpenCheckout = (m: any) => {
-    setCheckoutMensalidadeId(m);
+    setCheckoutFaturaId(m);
     setCheckoutData({
       desconto: 0,
       acrescimo: 0,
@@ -871,12 +871,12 @@ function App() {
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkoutMensalidadeId || isSubmitting) return;
+    if (!checkoutFaturaId || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const res = await api.financeiro.checkout(checkoutMensalidadeId._id, checkoutData);
-      alert('Checkout processado com sucesso! Protocolo: ' + (res.mensalidade?.protocolo || res.mensalidadeOrigem?.protocolo));
-      setCheckoutMensalidadeId(null);
+      const res = await api.financeiro.checkout(checkoutFaturaId._id, checkoutData);
+      toast.success('Checkout processado com sucesso! Protocolo: ' + (res.fatura?.protocolo || res.faturaOrigem?.protocolo));
+      setCheckoutFaturaId(null);
       carregarDados();
       // If we are in Ficha do Cliente, reload panorama
       if (selectedClientePanorama) {
@@ -884,7 +884,7 @@ function App() {
         setSelectedClientePanorama(panorama);
       }
     } catch (err: any) {
-      alert('Erro no checkout: ' + err.message);
+      toast.success('Erro no checkout: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -894,10 +894,10 @@ function App() {
   const handleForcarFaturamento = async () => {
     try {
       const res = await api.financeiro.faturarCron();
-      alert(`Ciclo de faturamento processado com sucesso! Faturas geradas: ${res.faturasGeradas}`);
+      toast.success(`Ciclo de faturamento processado com sucesso! Faturas geradas: ${res.faturasGeradas}`);
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao rodar faturamento automático: ' + err.message);
+      toast.success('Erro ao rodar faturamento automático: ' + err.message);
     }
   };
 
@@ -915,7 +915,7 @@ function App() {
           valor: Number(f.valor)
         }));
         if (faixasValidadas.length === 0) {
-          alert('Por favor, adicione pelo menos uma faixa de preço.');
+          toast.error( favor);
           return;
         }
       }
@@ -931,7 +931,7 @@ function App() {
         descricao: newPlano.descricao
       });
 
-      alert('Plano de cobrança cadastrado com sucesso!');
+      toast.success('Plano de cobrança cadastrado com sucesso!');
       setNewPlano({
         nome: '',
         tipoCobranca: 'POR_VEICULO',
@@ -945,7 +945,7 @@ function App() {
       setIsCriandoPlano(false);
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao cadastrar plano: ' + err.message);
+      toast.success('Erro ao cadastrar plano: ' + err.message);
     }
   };
 
@@ -953,10 +953,10 @@ function App() {
   const handleTogglePlanoStatus = async (id: string, ativoAtual: boolean) => {
     try {
       await api.planos.update(id, { ativo: !ativoAtual });
-      alert(`Plano ${ativoAtual ? 'desativado' : 'ativado'} com sucesso!`);
+      toast.success(`Plano ${ativoAtual ? 'desativado' : 'ativado'} com sucesso!`);
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao alterar status do plano: ' + err.message);
+      toast.success('Erro ao alterar status do plano: ' + err.message);
     }
   };
 
@@ -974,12 +974,12 @@ function App() {
         operadora: newEquipamento.operadora || undefined,
         apn: newEquipamento.apn || undefined
       });
-      alert('Equipamento cadastrado no estoque com sucesso!');
+      toast.success('Equipamento cadastrado no estoque com sucesso!');
       setNewEquipamento({ identificador: '', iccid: '', marca: '', modelo: '', numeroLinha: '', operadora: '', apn: '', observacoes: '' });
       carregarDados();
       setCurrentPage('estoque');
     } catch (err: any) {
-      alert('Erro ao cadastrar equipamento: ' + err.message);
+      toast.success('Erro ao cadastrar equipamento: ' + err.message);
     }
   };
 
@@ -996,14 +996,14 @@ function App() {
         planoId: editCliente.planoId,
         diaVencimento: editCliente.diaVencimento
       });
-      alert('Cliente atualizado com sucesso!');
+      toast.success('Cliente atualizado com sucesso!');
       setEditCliente(null);
       carregarDados();
       if (selectedClientePanorama && selectedClientePanorama.cliente._id === editCliente._id) {
         handleAbrirFichaCliente(editCliente._id);
       }
     } catch (err: any) {
-      alert('Erro ao editar cliente: ' + err.message);
+      toast.success('Erro ao editar cliente: ' + err.message);
     }
   };
 
@@ -1011,13 +1011,13 @@ function App() {
     if (!window.confirm('Tem certeza que deseja excluir este veículo? Esta ação não pode ser desfeita.')) return;
     try {
       await api.veiculos.delete(id);
-      alert('Veículo excluído com sucesso!');
+      toast.success('Veículo excluído com sucesso!');
       carregarDados();
       if (selectedClientePanorama) {
         handleAbrirFichaCliente(selectedClientePanorama.cliente._id);
       }
     } catch (err: any) {
-      alert('Erro ao excluir veículo: ' + err.message);
+      toast.success('Erro ao excluir veículo: ' + err.message);
     }
   };
 
@@ -1025,10 +1025,10 @@ function App() {
     if (!window.confirm('Tem certeza que deseja excluir este equipamento?')) return;
     try {
       await api.equipamentos.delete(id);
-      alert('Equipamento excluído com sucesso!');
+      toast.success('Equipamento excluído com sucesso!');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao excluir equipamento: ' + err.message);
+      toast.success('Erro ao excluir equipamento: ' + err.message);
     }
   };
 
@@ -1045,14 +1045,14 @@ function App() {
         ano: editVeiculo.ano,
         rastreadorId: editVeiculo.rastreadorId
       });
-      alert('Veículo atualizado com sucesso!');
+      toast.success('Veículo atualizado com sucesso!');
       setEditVeiculo(null);
       carregarDados();
       if (selectedClientePanorama) {
         handleAbrirFichaCliente(selectedClientePanorama.cliente._id);
       }
     } catch (err: any) {
-      alert('Erro ao editar veículo: ' + err.message);
+      toast.success('Erro ao editar veículo: ' + err.message);
     }
   };
 
@@ -1069,28 +1069,28 @@ function App() {
         modelo: editEquipamento.modelo,
         apn: editEquipamento.apn
       });
-      alert('Equipamento atualizado com sucesso!');
+      toast.success('Equipamento atualizado com sucesso!');
       setEditEquipamento(null);
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao editar equipamento: ' + err.message);
+      toast.success('Erro ao editar equipamento: ' + err.message);
     }
   };
 
   // Transferir Equipamento para Técnico
   const handleTransferirEquipamento = async (equipamentoId: string) => {
     if (!tecnicoParaTransferencia) {
-      alert('Selecione um técnico para transferência.');
+      toast.error();
       return;
     }
     try {
       await api.equipamentos.transfer(equipamentoId, tecnicoParaTransferencia);
-      alert('Equipamento transferido para o técnico com sucesso!');
+      toast.success('Equipamento transferido para o técnico com sucesso!');
       setTransferindoId(null);
       setTecnicoParaTransferencia('');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao transferir equipamento: ' + err.message);
+      toast.success('Erro ao transferir equipamento: ' + err.message);
     }
   };
 
@@ -1099,10 +1099,10 @@ function App() {
     if (!window.confirm('Confirma devolução ao estoque central?')) return;
     try {
       await api.equipamentos.transfer(equipamentoId, null);
-      alert('Equipamento devolvido ao estoque central!');
+      toast.success('Equipamento devolvido ao estoque central!');
       carregarDados();
     } catch (err: any) {
-      alert('Erro ao devolver equipamento: ' + err.message);
+      toast.success('Erro ao devolver equipamento: ' + err.message);
     }
   };
 
@@ -1203,12 +1203,12 @@ function App() {
             offsetAtrasadas={offsetAtrasadas}
             offsetPendentes={offsetPendentes}
             offsetPagas={offsetPagas}
-            valorMensalidadesPagas={valorMensalidadesPagas}
-            valorMensalidadesPendentes={valorMensalidadesPendentes}
-            valorMensalidadesAtrasadas={valorMensalidadesAtrasadas}
-            mensalidadesPagasCount={mensalidadesPagasCount}
-            mensalidadesPendentesCount={mensalidadesPendentesCount}
-            mensalidadesAtrasadasCount={mensalidadesAtrasadasCount}
+            valorFaturasPagas={valorFaturasPagas}
+            valorFaturasPendentes={valorFaturasPendentes}
+            valorFaturasAtrasadas={valorFaturasAtrasadas}
+            faturasPagasCount={faturasPagasCount}
+            faturasPendentesCount={faturasPendentesCount}
+            faturasAtrasadasCount={faturasAtrasadasCount}
             clientes={clientes}
             mrrPerdido={mrrPerdido}
             taxaChurn={taxaChurn}
@@ -1539,7 +1539,7 @@ function App() {
                 style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                 onClick={() => setFichaTab('financeiro')}
               >
-                💰 Mensalidades / Faturamento ({selectedClientePanorama.mensalidades.length})
+                💰 Faturas / Faturamento ({selectedClientePanorama.faturas.length})
               </button>
             </div>
 
@@ -1781,12 +1781,12 @@ function App() {
             {fichaTab === 'financeiro' && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <p style={{ color: '#555', margin: 0 }}>💰 Acompanhe o status financeiro de faturas e mensalidades.</p>
+                  <p style={{ color: '#555', margin: 0 }}>💰 Acompanhe o status financeiro de faturas e faturas.</p>
                   <button 
                     className="btn btn-primary" 
                     onClick={() => {
-                      setFiltroMensalidadeCliente(selectedClientePanorama.cliente.nome);
-                      setFinanceiroTab('mensalidades');
+                      setFiltroFaturaCliente(selectedClientePanorama.cliente.nome);
+                      setFinanceiroTab('faturas');
                       setCurrentPage('financeiro');
                     }}
                   >
@@ -1795,20 +1795,20 @@ function App() {
                 </div>
                 <div className="table-box">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3>Mensalidades do Cliente (Histórico Financeiro)</h3>
-                    {selectedMensalidadesIds.length > 0 && (
+                    <h3>Faturas do Cliente (Histórico Financeiro)</h3>
+                    {selectedFaturasIds.length > 0 && (
                       <button 
                         className="btn" 
                         style={{ background: 'var(--danger)', color: '#fff', border: 'none', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                        onClick={handleBulkDeleteMensalidades}
+                        onClick={handleBulkDeleteFaturas}
                         disabled={isSubmitting}
                       >
-                        {isSubmitting ? 'Apagando...' : `🗑️ Apagar Selecionadas (${selectedMensalidadesIds.length})`}
+                        {isSubmitting ? 'Apagando...' : `🗑️ Apagar Selecionadas (${selectedFaturasIds.length})`}
                       </button>
                     )}
                   </div>
                   <div className="table-container" style={{ marginTop: '1rem' }}>
-                    {selectedClientePanorama.mensalidades.length === 0 ? (
+                    {selectedClientePanorama.faturas.length === 0 ? (
                       <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Nenhuma fatura gerada para este cliente.</p>
                   ) : (
                     <table>
@@ -1817,12 +1817,12 @@ function App() {
                           <th>
                             <input 
                               type="checkbox" 
-                              checked={selectedMensalidadesIds.length === selectedClientePanorama.mensalidades.length && selectedClientePanorama.mensalidades.length > 0}
+                              checked={selectedFaturasIds.length === selectedClientePanorama.faturas.length && selectedClientePanorama.faturas.length > 0}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedMensalidadesIds(selectedClientePanorama.mensalidades.map((m: any) => m._id));
+                                  setSelectedFaturasIds(selectedClientePanorama.faturas.map((m: any) => m._id));
                                 } else {
-                                  setSelectedMensalidadesIds([]);
+                                  setSelectedFaturasIds([]);
                                 }
                               }}
                             />
@@ -1835,17 +1835,17 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedClientePanorama.mensalidades.map((m: any) => (
+                        {selectedClientePanorama.faturas.map((m: any) => (
                           <tr key={m._id}>
                             <td>
                               <input 
                                 type="checkbox" 
-                                checked={selectedMensalidadesIds.includes(m._id)}
+                                checked={selectedFaturasIds.includes(m._id)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelectedMensalidadesIds([...selectedMensalidadesIds, m._id]);
+                                    setSelectedFaturasIds([...selectedFaturasIds, m._id]);
                                   } else {
-                                    setSelectedMensalidadesIds(selectedMensalidadesIds.filter(id => id !== m._id));
+                                    setSelectedFaturasIds(selectedFaturasIds.filter(id => id !== m._id));
                                   }
                                 }}
                               />
@@ -1904,7 +1904,7 @@ function App() {
                         <strong>Aba Histórico:</strong> Tudo que acontecer com este cliente (instalação, manutenção e desinstalação) ficará salvo automaticamente aqui.
                       </li>
                       <li style={{ marginBottom: '10px' }}>
-                        <strong>Aba Financeiro:</strong> Exibe todas as mensalidades atreladas aos veículos deste cliente. Clique no botão de gerenciar para ir à área financeira.
+                        <strong>Aba Financeiro:</strong> Exibe todas as faturas atreladas aos veículos deste cliente. Clique no botão de gerenciar para ir à área financeira.
                       </li>
                     </ul>
                     <button className="btn btn-primary" style={{ width: '100%', marginTop: '15px' }} onClick={() => setShowHelpModal(false)}>
@@ -2520,7 +2520,7 @@ function App() {
           <div>
             <div className="view-header">
               <h1>Gestão Financeira</h1>
-              {financeiroTab === 'mensalidades' && (
+              {financeiroTab === 'faturas' && (
                 <button className="btn btn-primary" onClick={handleForcarFaturamento}>
                   ⚙️ Executar Ciclo de Faturamento
                 </button>
@@ -2530,9 +2530,9 @@ function App() {
             {/* Menu de Abas Internas */}
             <div className="filter-bar" style={{ gap: '0.5rem', background: 'var(--bg-surface)', padding: '0.5rem', marginBottom: '1.5rem', display: 'flex' }}>
               <button 
-                className={`btn ${financeiroTab === 'mensalidades' ? 'btn-primary' : 'btn-secondary'}`}
+                className={`btn ${financeiroTab === 'faturas' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                onClick={() => setFinanceiroTab('mensalidades')}
+                onClick={() => setFinanceiroTab('faturas')}
               >
                 Faturamento Recorrente
               </button>
@@ -2548,13 +2548,13 @@ function App() {
               </button>
             </div>
 
-            {financeiroTab === 'mensalidades' ? (
+            {financeiroTab === 'faturas' ? (
               <div className="table-box">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <h3>Mensalidades Pendentes/Pagas</h3>
-                    <button className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setIsMensalidadeModalOpen(true)}>
-                      + Nova Mensalidade Avulsa
+                    <h3>Faturas Pendentes/Pagas</h3>
+                    <button className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setIsFaturaModalOpen(true)}>
+                      + Nova Fatura Avulsa
                     </button>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem', color: 'var(--text-light)', cursor: 'pointer' }}>
                       <input 
@@ -2569,13 +2569,13 @@ function App() {
                     <input 
                       type="text" 
                       placeholder="Buscar por cliente..." 
-                      value={filtroMensalidadeCliente}
-                      onChange={(e) => setFiltroMensalidadeCliente(e.target.value)}
+                      value={filtroFaturaCliente}
+                      onChange={(e) => setFiltroFaturaCliente(e.target.value)}
                       style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-deep)', color: 'var(--text-light)' }}
                     />
                     <select 
-                      value={filtroMensalidadeStatus}
-                      onChange={(e) => setFiltroMensalidadeStatus(e.target.value)}
+                      value={filtroFaturaStatus}
+                      onChange={(e) => setFiltroFaturaStatus(e.target.value)}
                       style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-deep)', color: 'var(--text-light)' }}
                     >
                       <option value="todos">Todos os Status</option>
@@ -2583,12 +2583,12 @@ function App() {
                       <option value="PAGO">Pagos</option>
                       <option value="ATRASADO">Atrasados</option>
                     </select>
-                    {(filtroMensalidadeCliente || filtroMensalidadeStatus !== 'todos') && (
+                    {(filtroFaturaCliente || filtroFaturaStatus !== 'todos') && (
                       <button 
                         className="btn btn-secondary" 
                         onClick={() => {
-                          setFiltroMensalidadeCliente('');
-                          setFiltroMensalidadeStatus('todos');
+                          setFiltroFaturaCliente('');
+                          setFiltroFaturaStatus('todos');
                         }}
                       >
                         Limpar Filtros
@@ -2596,10 +2596,10 @@ function App() {
                     )}
                   </div>
                 </div>
-                {selectedMensalidadesGeraisIds.length > 0 && (
+                {selectedFaturasGeraisIds.length > 0 && (
                   <div style={{ background: 'var(--bg-deep)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>
-                      {selectedMensalidadesGeraisIds.length} fatura(s) selecionada(s)
+                      {selectedFaturasGeraisIds.length} fatura(s) selecionada(s)
                     </span>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       <button className="btn btn-primary" onClick={handleBulkCheckout}>
@@ -2625,22 +2625,22 @@ function App() {
                     </thead>
                     <tbody>
                       {(() => {
-                        const filteredMensalidades = mensalidades.filter(m => {
+                        const filteredFaturas = faturas.filter(m => {
                           const clienteNome = (m.clienteId?.nome || '').toLowerCase();
-                          const busca = filtroMensalidadeCliente.toLowerCase();
+                          const busca = filtroFaturaCliente.toLowerCase();
                           if (busca && !clienteNome.includes(busca)) return false;
-                          if (filtroMensalidadeStatus !== 'todos' && m.status !== filtroMensalidadeStatus) return false;
+                          if (filtroFaturaStatus !== 'todos' && m.status !== filtroFaturaStatus) return false;
                           return true;
                         });
 
                         if (!agruparFinanceiro) {
-                          return filteredMensalidades.map(m => (
+                          return filteredFaturas.map(m => (
                             <tr key={m._id}>
                               <td>
                                 {m.status !== 'PAGO' && (
-                                  <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
-                                    if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
-                                    else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
+                                  <input type="checkbox" checked={selectedFaturasGeraisIds.includes(m._id)} onChange={(e) => {
+                                    if (e.target.checked) setSelectedFaturasGeraisIds([...selectedFaturasGeraisIds, m._id]);
+                                    else setSelectedFaturasGeraisIds(selectedFaturasGeraisIds.filter(id => id !== m._id));
                                   }} />
                                 )}
                               </td>
@@ -2677,10 +2677,10 @@ function App() {
                                       💳 Pagar
                                     </button>
                                   )}
-                                  <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
+                                  <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditFatura(m)}>
                                     ✎ Editar
                                   </button>
-                                  <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
+                                  <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteFatura(m._id)}>
                                     🗑️ Excluir
                                   </button>
                                 </div>
@@ -2688,10 +2688,10 @@ function App() {
                             </tr>
                           ));
                         } else {
-                          const grouped = filteredMensalidades.reduce((acc: any, curr: any) => {
+                          const grouped = filteredFaturas.reduce((acc: any, curr: any) => {
                             const cId = curr.clienteId?._id || 'desconhecido';
-                            if (!acc[cId]) acc[cId] = { cliente: curr.clienteId, mensalidades: [] };
-                            acc[cId].mensalidades.push(curr);
+                            if (!acc[cId]) acc[cId] = { cliente: curr.clienteId, faturas: [] };
+                            acc[cId].faturas.push(curr);
                             return acc;
                           }, {});
                           return Object.values(grouped).map((group: any) => (
@@ -2704,18 +2704,18 @@ function App() {
                                     </div>
                                     <div className="customer-info">
                                       <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>{group.cliente?.nome || 'Cliente Removido'}</span>
-                                      <small>{group.cliente?.whatsapp || 'N/A'} - {group.mensalidades.length} fatura(s)</small>
+                                      <small>{group.cliente?.whatsapp || 'N/A'} - {group.faturas.length} fatura(s)</small>
                                     </div>
                                   </div>
                                 </td>
                               </tr>
-                              {group.mensalidades.map((m: any) => (
+                              {group.faturas.map((m: any) => (
                                 <tr key={m._id} style={{ opacity: 0.95 }}>
                                   <td>
                                     {m.status !== 'PAGO' && (
-                                      <input type="checkbox" checked={selectedMensalidadesGeraisIds.includes(m._id)} onChange={(e) => {
-                                        if (e.target.checked) setSelectedMensalidadesGeraisIds([...selectedMensalidadesGeraisIds, m._id]);
-                                        else setSelectedMensalidadesGeraisIds(selectedMensalidadesGeraisIds.filter(id => id !== m._id));
+                                      <input type="checkbox" checked={selectedFaturasGeraisIds.includes(m._id)} onChange={(e) => {
+                                        if (e.target.checked) setSelectedFaturasGeraisIds([...selectedFaturasGeraisIds, m._id]);
+                                        else setSelectedFaturasGeraisIds(selectedFaturasGeraisIds.filter(id => id !== m._id));
                                       }} />
                                     )}
                                   </td>
@@ -2737,10 +2737,10 @@ function App() {
                                           💳 Pagar
                                         </button>
                                       )}
-                                      <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditMensalidade(m)}>
+                                      <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }} onClick={() => setEditFatura(m)}>
                                         ✎
                                       </button>
-                                      <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteMensalidade(m._id)}>
+                                      <button className="btn" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', background: 'var(--danger)', color: '#fff', border: 'none' }} onClick={() => handleDeleteFatura(m._id)}>
                                         🗑️
                                       </button>
                                     </div>
@@ -3512,12 +3512,12 @@ function App() {
                     {/* FAQ 1 */}
                     <div className={`faq-item ${faqOpenIndex === 0 ? 'open' : ''}`}>
                       <div className="faq-question" onClick={() => setFaqOpenIndex(faqOpenIndex === 0 ? null : 0)}>
-                        <span>Como dar baixa rápida em uma mensalidade?</span>
+                        <span>Como dar baixa rápida em uma fatura?</span>
                         <span className="faq-arrow">▼</span>
                       </div>
                       <div className="faq-answer">
                         <p>
-                          Para dar baixa de pagamento, acesse a aba <strong>Clientes</strong>, selecione o cliente correspondente e clique no botão <strong>"Ver Ficha"</strong>. Na Ficha do Cliente, vá na aba <strong>Financeiro</strong>, localize a mensalidade e clique no botão <strong>"Baixa Rápida"</strong>. O sistema confirmará o pagamento em tempo real.
+                          Para dar baixa de pagamento, acesse a aba <strong>Clientes</strong>, selecione o cliente correspondente e clique no botão <strong>"Ver Ficha"</strong>. Na Ficha do Cliente, vá na aba <strong>Financeiro</strong>, localize a fatura e clique no botão <strong>"Baixa Rápida"</strong>. O sistema confirmará o pagamento em tempo real.
                         </p>
                       </div>
                     </div>
@@ -3600,7 +3600,7 @@ function App() {
                             <option value="Técnicos">Técnicos</option>
                             <option value="Estoque">Estoque</option>
                             <option value="Ordens de Serviço">Ordens de Serviço</option>
-                            <option value="Mensalidades">Mensalidades</option>
+                            <option value="Faturas">Faturas</option>
                             <option value="Fluxo de Caixa">Fluxo de Caixa</option>
                             <option value="Histórico Cruzado">Histórico Cruzado</option>
                           </select>
@@ -3793,18 +3793,18 @@ function App() {
         </div>
       )}
 
-      {/* Modal Criar Mensalidade Avulsa */}
-      {isMensalidadeModalOpen && (
+      {/* Modal Criar Fatura Avulsa */}
+      {isFaturaModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Nova Mensalidade Avulsa</h2>
-              <button className="close-btn" onClick={() => setIsMensalidadeModalOpen(false)}>×</button>
+              <h2>Nova Fatura Avulsa</h2>
+              <button className="close-btn" onClick={() => setIsFaturaModalOpen(false)}>×</button>
             </div>
-            <form onSubmit={handleCreateMensalidade} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateFatura} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
                 <label>Cliente</label>
-                <select value={newMensalidade.clienteId} onChange={(e) => setNewMensalidade({...newMensalidade, clienteId: e.target.value})} className="input" required>
+                <select value={newFatura.clienteId} onChange={(e) => setNewFatura({...newFatura, clienteId: e.target.value})} className="input" required>
                   <option value="">Selecione o Cliente</option>
                   {clientes.filter(c => c.ativo).map(c => (
                     <option key={c._id} value={c._id}>{c.nome}</option>
@@ -3813,75 +3813,75 @@ function App() {
               </div>
               <div className="form-group">
                 <label>Valor (R$)</label>
-                <input type="text" placeholder="Ex: 80.00" value={newMensalidade.valor} onChange={(e) => {
+                <input type="text" placeholder="Ex: 80.00" value={newFatura.valor} onChange={(e) => {
                   let val = e.target.value.replace(',', '.');
                   val = val.replace(/[^0-9.]/g, ''); // permite apenas números e pontos
-                  setNewMensalidade({...newMensalidade, valor: val});
+                  setNewFatura({...newFatura, valor: val});
                 }} className="input" required />
               </div>
               <div className="form-group">
                 <label>Vencimento</label>
-                <input type="date" value={newMensalidade.dataVencimento} onChange={(e) => setNewMensalidade({...newMensalidade, dataVencimento: e.target.value})} className="input" required />
+                <input type="date" value={newFatura.dataVencimento} onChange={(e) => setNewFatura({...newFatura, dataVencimento: e.target.value})} className="input" required />
               </div>
               <div className="form-group">
                 <label>Status</label>
-                <select value={newMensalidade.status} onChange={(e) => setNewMensalidade({...newMensalidade, status: e.target.value})} className="input">
+                <select value={newFatura.status} onChange={(e) => setNewFatura({...newFatura, status: e.target.value})} className="input">
                   <option value="PENDENTE">Pendente</option>
                   <option value="PAGO">Pago</option>
                   <option value="ATRASADO">Atrasado</option>
                 </select>
               </div>
               <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? 'Gerando...' : 'Gerar Mensalidade'}
+                {isSubmitting ? 'Gerando...' : 'Gerar Fatura'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal Editar Mensalidade */}
-      {editMensalidade && (
+      {/* Modal Editar Fatura */}
+      {editFatura && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Editar Mensalidade</h2>
-              <button className="close-btn" onClick={() => setEditMensalidade(null)}>×</button>
+              <h2>Editar Fatura</h2>
+              <button className="close-btn" onClick={() => setEditFatura(null)}>×</button>
             </div>
-            <form onSubmit={handleEditMensalidadeSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleEditFaturaSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group">
                 <label>Valor (R$)</label>
-                <input type="number" step="0.01" value={editMensalidade.valor} onChange={(e) => setEditMensalidade({...editMensalidade, valor: Number(e.target.value)})} className="input" required />
+                <input type="number" step="0.01" value={editFatura.valor} onChange={(e) => setEditFatura({...editFatura, valor: Number(e.target.value)})} className="input" required />
               </div>
               <div className="form-group">
                 <label>Vencimento</label>
-                <input type="date" value={editMensalidade.dataVencimento ? editMensalidade.dataVencimento.split('T')[0] : ''} onChange={(e) => setEditMensalidade({...editMensalidade, dataVencimento: e.target.value})} className="input" required />
+                <input type="date" value={editFatura.dataVencimento ? editFatura.dataVencimento.split('T')[0] : ''} onChange={(e) => setEditFatura({...editFatura, dataVencimento: e.target.value})} className="input" required />
               </div>
               <div className="form-group">
                 <label>Status</label>
-                <select value={editMensalidade.status} onChange={(e) => setEditMensalidade({...editMensalidade, status: e.target.value})} className="input">
+                <select value={editFatura.status} onChange={(e) => setEditFatura({...editFatura, status: e.target.value})} className="input">
                   <option value="PENDENTE">Pendente</option>
                   <option value="PAGO">Pago</option>
                   <option value="ATRASADO">Atrasado</option>
                 </select>
               </div>
-              <button type="submit" className="btn btn-primary">Salvar Mensalidade</button>
+              <button type="submit" className="btn btn-primary">Salvar Fatura</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal Checkout Mensalidade */}
-      {checkoutMensalidadeId && (
+      {/* Modal Checkout Fatura */}
+      {checkoutFaturaId && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '550px' }}>
             <div className="modal-header">
               <h2>Checkout de Pagamento</h2>
-              <button className="close-btn" onClick={() => setCheckoutMensalidadeId(null)}>×</button>
+              <button className="close-btn" onClick={() => setCheckoutFaturaId(null)}>×</button>
             </div>
             <form onSubmit={handleCheckoutSubmit} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ background: 'var(--bg-deep)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Fatura Original:</span>
-                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>R$ {Number(checkoutMensalidadeId.valor).toFixed(2)}</span>
+                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>R$ {Number(checkoutFaturaId.valor).toFixed(2)}</span>
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -3898,7 +3898,7 @@ function App() {
               <div style={{ background: 'rgba(0, 240, 255, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--accent-blue)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--accent-blue)', fontWeight: 'bold' }}>Total Devido:</span>
                 <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent-blue)' }}>
-                  R$ {(Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto).toFixed(2)}
+                  R$ {(Number(checkoutFaturaId.valor) + checkoutData.acrescimo - checkoutData.desconto).toFixed(2)}
                 </span>
               </div>
 
@@ -3928,11 +3928,11 @@ function App() {
                 />
               </div>
 
-              {checkoutData.valorPago > 0 && checkoutData.valorPago < (Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto) && (
+              {checkoutData.valorPago > 0 && checkoutData.valorPago < (Number(checkoutFaturaId.valor) + checkoutData.acrescimo - checkoutData.desconto) && (
                 <div style={{ background: 'rgba(255, 0, 60, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--danger)', marginTop: '0.5rem' }}>
                   <p style={{ color: 'var(--danger)', marginBottom: '0.5rem', fontWeight: 'bold' }}>Atenção: Pagamento Parcial Detectado</p>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '1rem' }}>
-                    O valor recebido é menor que o total. O sistema marcará esta fatura como Parcial e <strong>gerará automaticamente uma nova fatura</strong> com o saldo restante (R$ {((Number(checkoutMensalidadeId.valor) + checkoutData.acrescimo - checkoutData.desconto) - checkoutData.valorPago).toFixed(2)}).
+                    O valor recebido é menor que o total. O sistema marcará esta fatura como Parcial e <strong>gerará automaticamente uma nova fatura</strong> com o saldo restante (R$ {((Number(checkoutFaturaId.valor) + checkoutData.acrescimo - checkoutData.desconto) - checkoutData.valorPago).toFixed(2)}).
                   </p>
                   <div className="form-group">
                     <label style={{ color: 'var(--text-main)' }}>Nova Data de Vencimento para o Restante</label>
@@ -3964,7 +3964,7 @@ function App() {
             </div>
             <div className="modal-body">
               <div className="alert-warning" style={{ background: 'rgba(231, 76, 60, 0.1)', color: 'var(--danger)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                <strong>Atenção:</strong> Ao inativar, este cliente parará de gerar novas mensalidades e será removido das métricas principais.
+                <strong>Atenção:</strong> Ao inativar, este cliente parará de gerar novas faturas e será removido das métricas principais.
               </div>
               <div className="form-group">
                 <label>Categoria do Cancelamento *</label>

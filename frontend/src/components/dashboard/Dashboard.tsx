@@ -15,12 +15,12 @@ interface DashboardProps {
   offsetAtrasadas: number;
   offsetPendentes: number;
   offsetPagas: number;
-  valorMensalidadesPagas: number;
-  valorMensalidadesPendentes: number;
-  valorMensalidadesAtrasadas: number;
-  mensalidadesPagasCount: number;
-  mensalidadesPendentesCount: number;
-  mensalidadesAtrasadasCount: number;
+  valorFaturasPagas: number;
+  valorFaturasPendentes: number;
+  valorFaturasAtrasadas: number;
+  faturasPagasCount: number;
+  faturasPendentesCount: number;
+  faturasAtrasadasCount: number;
   clientes: Cliente[];
   mrrPerdido: number;
   taxaChurn: number;
@@ -142,7 +142,7 @@ export function Dashboard(props: DashboardProps) {
               <circle className="donut-circle-val1" cx="50" cy="50" r="40" strokeDasharray="251.2" style={{ strokeDashoffset: props.offsetPagas, stroke: 'var(--success)', filter: 'drop-shadow(0 0 5px rgba(57, 255, 20, 0.5))' }} />
             </svg>
             <div className="donut-text">
-              <h3 style={{ fontSize: '1.25rem' }}>R$ {props.valorMensalidadesPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
+              <h3 style={{ fontSize: '1.25rem' }}>R$ {props.valorFaturasPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
               <span>Recebido</span>
             </div>
           </div>
@@ -152,21 +152,21 @@ export function Dashboard(props: DashboardProps) {
                 <div className="legend-dot" style={{ backgroundColor: 'var(--success)' }}></div>
                 <span>Recebidas (Pagas)</span>
               </div>
-              <strong>R$ {props.valorMensalidadesPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.mensalidadesPagasCount})</strong>
+              <strong>R$ {props.valorFaturasPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.faturasPagasCount})</strong>
             </div>
             <div className="legend-item">
               <div className="legend-label-group">
                 <div className="legend-dot" style={{ backgroundColor: 'var(--accent-yellow)' }}></div>
                 <span>Pendentes</span>
               </div>
-              <strong>R$ {props.valorMensalidadesPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.mensalidadesPendentesCount})</strong>
+              <strong>R$ {props.valorFaturasPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.faturasPendentesCount})</strong>
             </div>
             <div className="legend-item">
               <div className="legend-label-group">
                 <div className="legend-dot" style={{ backgroundColor: 'var(--primary)' }}></div>
                 <span>Atrasadas</span>
               </div>
-              <strong>R$ {props.valorMensalidadesAtrasadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.mensalidadesAtrasadasCount})</strong>
+              <strong>R$ {props.valorFaturasAtrasadas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ({props.faturasAtrasadasCount})</strong>
             </div>
           </div>
         </div>
