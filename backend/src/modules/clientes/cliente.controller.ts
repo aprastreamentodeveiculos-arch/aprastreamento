@@ -232,7 +232,10 @@ export const getClientePanorama = async (req: Request, res: Response): Promise<v
 
     // Pega historico de todos os veiculos desse cliente
     const veiculoIds = veiculos.map((v) => v._id);
-    const historico = await HistoricoInstalacao.find({ veiculoId: { $in: veiculoIds } }).sort({ dataInstalacao: -1 }).populate('tecnicoId', 'nome');
+    const historico = await HistoricoInstalacao.find({ veiculoId: { $in: veiculoIds } })
+      .sort({ dataInstalacao: -1 })
+      .populate('tecnicoId', 'nome')
+      .populate('rastreadorId');
 
     res.status(200).json({
       assinatura,
