@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Sidebar } from './components/Sidebar';
 import { Login } from './components/Login';
 import { GestaoUsuarios } from './components/GestaoUsuarios';
@@ -517,14 +518,14 @@ function App() {
   const handleSendOS = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOS.placa || !newOS.clienteId || !newOS.rastreadorId) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
 
     // Achar o técnico logado
     const tecnicoLogado = tecnicos.find(t => t.nome === userName);
     if (!tecnicoLogado) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
 
@@ -563,7 +564,7 @@ function App() {
     // Filtra apenas linhas que tenham a placa preenchida (obrigatório)
     const veiculosValidos = frotaRows.filter(r => r.placa.trim() !== '');
     if (veiculosValidos.length === 0) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
 
@@ -593,7 +594,7 @@ function App() {
   const handleScheduleOS = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!scheduleOS.clienteId || !scheduleOS.placa || !scheduleOS.tecnicoId || !scheduleOS.rastreadorId) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
 
@@ -627,7 +628,7 @@ function App() {
   const confirmInativarCliente = async () => {
     if (!clienteParaInativar) return;
     if (!motivoInativacao) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
     try {
@@ -915,7 +916,7 @@ function App() {
           valor: Number(f.valor)
         }));
         if (faixasValidadas.length === 0) {
-          toast.error( favor);
+          toast.error('Preencha os campos');
           return;
         }
       }
@@ -1080,7 +1081,7 @@ function App() {
   // Transferir Equipamento para Técnico
   const handleTransferirEquipamento = async (equipamentoId: string) => {
     if (!tecnicoParaTransferencia) {
-      toast.error();
+      toast.error('Ocorreu um erro');
       return;
     }
     try {
