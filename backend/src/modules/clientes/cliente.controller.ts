@@ -3,7 +3,7 @@ import { Assinatura } from '../financeiro/assinatura.model';
 import { Cliente } from './cliente.model';
 import { Veiculo } from '../veiculos/veiculo.model';
 import { HistoricoInstalacao } from '../historico/historico.model';
-import { Fatura } from '../financeiro/mensalidade.model';
+import { Fatura } from '../financeiro/fatura.model';
 import { Plano } from '../planos/plano.model';
 import { Equipamento } from '../equipamentos/equipamento.model';
 
@@ -205,12 +205,12 @@ export const deleteCliente = async (req: Request, res: Response): Promise<void> 
     }
 
     // Cancelar as faturas pendentes deste cliente para que não fiquem ativas no faturamento
-    await Mensalidade.updateMany(
+    await Fatura.updateMany(
       { clienteId: id, status: 'PENDENTE' },
       { $set: { status: 'CANCELADO', observacao: 'Cliente inativado.' } }
     );
 
-    res.status(200).json({ message: 'Cliente desativado com sucesso. Mensalidades pendentes foram canceladas.', cliente });
+    res.status(200).json({ message: 'Cliente desativado com sucesso. Faturas pendentes foram canceladas.', cliente });
   } catch (error: any) {
     res.status(500).json({ error: 'Erro ao desativar cliente.', details: error.message });
   }

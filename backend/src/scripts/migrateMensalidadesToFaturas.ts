@@ -76,10 +76,10 @@ async function runMigration() {
           await Fatura.create({
             assinaturaId: assinatura._id,
             clienteId: cliente._id,
-            status: mens.status === 'ATRASADO' ? 'PENDENTE' : mens.status,
-            dataEmissao: mens.dataEmissao || new Date(),
-            dataVencimento: mens.dataVencimento,
-            dataPagamento: mens.dataPagamento,
+            status: (mens.status === 'ATRASADO' ? 'PENDENTE' : (mens.status || 'PENDENTE')) as any,
+            dataEmissao: (mens.dataEmissao || new Date()) as Date,
+            dataVencimento: mens.dataVencimento as Date,
+            dataPagamento: mens.dataPagamento as Date | undefined,
             valorTotal: valorTotal,
             valorPago: mens.valorPago || 0,
             linhas: [{
